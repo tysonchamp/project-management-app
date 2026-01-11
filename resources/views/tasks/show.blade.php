@@ -174,11 +174,11 @@
                 <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
                     <h4 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wide">System Updates</h4>
                     <div class="space-y-4">
-                        @forelse($task->updates as $update)
+                        @forelse($task->activityLogs as $log)
                             <div class="text-sm text-gray-600">
-                                <span class="font-medium text-gray-800">{{ $update->user->name ?? 'System' }}</span>
-                                {{ $update->update }}
-                                <span class="text-gray-400 text-xs ml-1">{{ $update->created_at->diffForHumans() }}</span>
+                                <span class="font-medium text-gray-800">{{ $log->user->name ?? 'System' }}</span>
+                                {{ $log->description }}
+                                <span class="text-gray-400 text-xs ml-1">{{ $log->created_at->diffForHumans() }}</span>
                             </div>
                         @empty
                             <p class="text-gray-400 italic text-xs">No system updates.</p>

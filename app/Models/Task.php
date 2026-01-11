@@ -41,4 +41,9 @@ class Task extends Model
     {
         return $this->hasMany(TaskUpdates::class)->latest();
     }
+
+    public function activityLogs()
+    {
+        return $this->morphMany(ActivityLog::class, 'subject')->latest();
+    }
 }
