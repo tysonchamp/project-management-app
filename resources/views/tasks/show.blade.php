@@ -190,6 +190,73 @@
 
         <!-- Sidebar Column -->
         <div class="space-y-6">
+            <!-- Time Tracking -->
+            <div class="bg-white shadow rounded-lg p-6">
+                <h3 class="text-lg font-bold text-gray-900 mb-4">Time Tracking</h3>
+
+                @php
+                    $activeTimer = $task->timeEntries->where('user_id', Auth::id())->whereNull('end_time')->first();
+                    $activeDuration = $activeTimer ? abs(now()->diffInSeconds($activeTimer->start_time)) : 0;
+                    $totalSeconds = $task->timeEntries->sum('duration') + $activeDuration;
+
+                    $hours = floor($totalSeconds / 3600);
+                    $minutes = floor(($totalSeconds / 60) % 60);
+                    $seconds = $totalSeconds % 60;
+                    $totalTime = sprintf('%02d:%02d:%02d', $hours, $minutes, $seconds);
+                @endphp
+
+                <div class="mb-6 text-center">
+                    <div class="text-3xl font-mono font-bold text-gray-800 mb-2">{{ $totalTime }}</div>
+                    <p class="text-xs text-gray-500 uppercase tracking-widest">Total Time Spent</p>
+                </div>
+
+                @if ($activeTimer)
+                    <div class="mb-6">
+                        <div class="bg-green-50 border border-green-200 rounded p-3 text-center mb-3">
+                            <span class="text-green-800 font-medium text-sm animate-pulse">Running Since
+                                {{ $activeTimer->start_time->setTimezone(Auth::user()->timezone ?? config('app.timezone'))->format('H:i') }}</span>
+                        </div>
+                        <form action="{{ route('tasks.timer.stop', $task) }}" method="POST">
+                            @csrf
+                            <button type="submit"
+                                class="w-full bg-red-600 text-white px-4 py-2 rounded shadow hover:bg-red-700 transition">
+                                Stop Timer
+                            </button>
+                        </form>
+                    </div>
+                @else
+                    <div class="mb-6">
+                        <form action="{{ route('tasks.timer.start', $task) }}" method="POST">
+                            @csrf
+                            <button type="submit"
+                                class="w-full bg-green-600 text-white px-4 py-2 rounded shadow hover:bg-green-700 transition">
+                                Start Timer
+                            </button>
+                        </form>
+                    </div>
+                @endif
+
+                <div class="border-t border-gray-100 pt-4">
+                    <h4 class="text-xs font-bold text-gray-500 uppercase mb-3">Recent Logs</h4>
+                    <ul class="space-y-3">
+                        @forelse($task->timeEntries->whereNotNull('end_time')->take(5) as $entry)
+                            <li class="flex justify-between items-start text-sm">
+                                <div>
+                                    <span class="block font-medium text-gray-900">{{ $entry->user->name }}</span>
+                                    <span
+                                        class="text-gray-500 text-xs">{{ $entry->start_time->setTimezone(Auth::user()->timezone ?? config('app.timezone'))->format('M d, H:i') }}</span>
+                                </div>
+                                <span class="font-mono text-gray-600 bg-gray-100 px-2 py-1 rounded text-xs">
+                                    {{ sprintf('%02d:%02d:%02d', floor($entry->duration / 3600), floor(($entry->duration / 60) % 60), $entry->duration % 60) }}
+                                </span>
+                            </li>
+                        @empty
+                            <li class="text-gray-400 italic text-xs">No time logged yet.</li>
+                        @endforelse
+                    </ul>
+                </div>
+            </div>
+
             <!-- Status Management -->
             <div class="bg-white shadow rounded-lg p-6">
                 <h3 class="text-lg font-bold text-gray-900 mb-4">Manage Status</h3>

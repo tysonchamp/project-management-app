@@ -5,6 +5,7 @@ namespace App\Models;
 use App\Models\Attachment;
 use App\Models\Comment;
 use App\Models\TaskUpdate;
+use App\Models\TimeEntry;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Database\Eloquent\Model;
 
@@ -45,5 +46,10 @@ class Task extends Model
     public function activityLogs()
     {
         return $this->morphMany(ActivityLog::class, 'subject')->latest();
+    }
+
+    public function timeEntries()
+    {
+        return $this->hasMany(TimeEntry::class)->latest();
     }
 }

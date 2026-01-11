@@ -45,6 +45,10 @@ Route::middleware(['auth'])->group(function () {
     // Comments & Attachments
     Route::post('tasks/{task}/comments', [App\Http\Controllers\CommentController::class, 'store'])->name('tasks.comments.store');
 
+    // Time Tracking
+    Route::post('tasks/{task}/timer/start', [App\Http\Controllers\TimeEntryController::class, 'start'])->name('tasks.timer.start');
+    Route::post('tasks/{task}/timer/stop', [App\Http\Controllers\TimeEntryController::class, 'stop'])->name('tasks.timer.stop');
+
     // Credential Routes
     Route::get('credentials', [App\Http\Controllers\CredentialController::class, 'index'])->name('credentials.index');
     Route::post('credentials', [App\Http\Controllers\CredentialController::class, 'store'])->name('credentials.store');
