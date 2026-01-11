@@ -64,6 +64,9 @@ class TaskController extends Controller
         $validated = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'description' => ['required', 'string'],
+            'priority' => ['required', Rule::in(['low', 'medium', 'high', 'urgent'])],
+            'type' => ['required', Rule::in(['bug', 'feature', 'improvement'])],
+            'due_date' => ['nullable', 'date'],
             'assignees' => ['required', 'array'],
             'assignees.*' => ['exists:users,id'],
         ]);
@@ -71,6 +74,9 @@ class TaskController extends Controller
         $task = Task::create([
             'title' => $validated['title'],
             'description' => $validated['description'],
+            'priority' => $validated['priority'],
+            'type' => $validated['type'],
+            'due_date' => $validated['due_date'],
             'created_by' => Auth::id() ?? 1, // Fallback to 1 if no auth for dev testing, but should be authed
             'status' => 'todo',
         ]);
@@ -101,5 +107,45 @@ class TaskController extends Controller
         $task->update(['status' => $validated['status']]);
 
         return back()->with('success', 'Task status updated.');
+    }
+
+    /**
+     * Display a Kanban board of tasks.
+     */
+    public function kanban()
+    {
+        $user = Auth::user();
+
+        $query = Task::with('assignees', 'creator');
+
+        if ($user->role !== 'admin') {
+            $query->where(function($q) use ($user) {
+                $q->where('created_by', $user->id)
+                  ->orWhereHas('assignees', function($sq) use ($user) {
+                      $sq->where('users.id', $user->id);
+                  });
+            });
+        }
+        
+        $tasks = $query->latest()->get();
+        
+        // Group tasks by status for the view
+        $todoTasks = $tasks->where('status', 'todo');
+        $inProgressTasks = $tasks->where('status', 'in_progress');
+        $doneTasks = $tasks->where('status', 'done');
+
+        return view('tasks.kanban', compact('todoTasks', 'inProgressTasks', 'doneTasks'));
+    }
+    public function destroy(Task $task)
+    {
+        $user = Auth::user();
+
+        if ($user->role !== 'admin' && $user->id !== $task->created_by) {
+            abort(403, 'Unauthorized action.');
+        }
+
+        $task->delete();
+
+        return back()->with('success', 'Task deleted successfully.');
     }
 }

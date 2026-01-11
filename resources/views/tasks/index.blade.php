@@ -3,8 +3,12 @@
 @section('content')
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">Tasks</h1>
-        <a href="{{ route('tasks.create') }}"
-            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Create New Task</a>
+        <div class="flex space-x-2">
+            <a href="{{ route('tasks.kanban') }}"
+                class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition">Kanban View</a>
+            <a href="{{ route('tasks.create') }}"
+                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Create New Task</a>
+        </div>
     </div>
 
     <div class="mb-6 border-b border-gray-200">
@@ -13,24 +17,24 @@
                 $currentStatus = request('status', 'default');
                 // Maps query param to a human readable label. 'default' implies todo+in_progress
             @endphp
-            
+
             <a href="{{ route('tasks.index', ['status' => 'all']) }}"
-               class="@if($currentStatus == 'all') border-indigo-500 text-indigo-600 @else border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 @endif whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                class="@if ($currentStatus == 'all') border-indigo-500 text-indigo-600 @else border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 @endif whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                 All
             </a>
 
             <a href="{{ route('tasks.index', ['status' => 'todo']) }}"
-               class="@if($currentStatus == 'todo') border-indigo-500 text-indigo-600 @else border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 @endif whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                class="@if ($currentStatus == 'todo') border-indigo-500 text-indigo-600 @else border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 @endif whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                 To Do
             </a>
 
             <a href="{{ route('tasks.index', ['status' => 'in_progress']) }}"
-               class="@if($currentStatus == 'in_progress') border-indigo-500 text-indigo-600 @else border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 @endif whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                class="@if ($currentStatus == 'in_progress') border-indigo-500 text-indigo-600 @else border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 @endif whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                 In Progress
             </a>
 
             <a href="{{ route('tasks.index', ['status' => 'done']) }}"
-               class="@if($currentStatus == 'done') border-indigo-500 text-indigo-600 @else border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 @endif whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
+                class="@if ($currentStatus == 'done') border-indigo-500 text-indigo-600 @else border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 @endif whitespace-nowrap py-4 px-1 border-b-2 font-medium text-sm">
                 Done
             </a>
         </nav>
@@ -52,8 +56,31 @@
                         @else bg-green-100 text-green-800 @endif">
                             {{ ucfirst(str_replace('_', ' ', $task->status)) }}
                         </span>
-                        <span class="text-xs text-gray-500">{{ $task->created_at->diffForHumans() }}</span>
+                        <div class="flex flex-col items-end">
+                            <span class="text-xs text-gray-500 mb-1">{{ $task->created_at->diffForHumans() }}</span>
+                            @if ($task->due_date)
+                                <span
+                                    class="text-xs font-bold @if ($task->due_date < now() && $task->status != 'done') text-red-600 @else text-gray-600 @endif">
+                                    Due: {{ $task->due_date->format('M d') }}
+                                </span>
+                            @endif
+                        </div>
                     </div>
+
+                    <div class="flex gap-2 mb-2">
+                        <span
+                            class="px-2 py-0.5 text-xs rounded border 
+                            @if ($task->priority == 'urgent') border-red-500 text-red-700 bg-red-50
+                            @elseif($task->priority == 'high') border-orange-500 text-orange-700 bg-orange-50
+                            @elseif($task->priority == 'medium') border-yellow-500 text-yellow-700 bg-yellow-50
+                            @else border-gray-300 text-gray-600 bg-gray-50 @endif">
+                            {{ ucfirst($task->priority) }}
+                        </span>
+                        <span class="px-2 py-0.5 text-xs rounded border border-gray-200 bg-white text-gray-600">
+                            {{ ucfirst($task->type) }}
+                        </span>
+                    </div>
+
                     <h3 class="text-lg font-bold text-gray-900 mb-2 truncate">{{ $task->title }}</h3>
                     <p class="text-gray-600 text-sm mb-4 line-clamp-2">{{ $task->description }}</p>
 
@@ -72,7 +99,23 @@
                                 </div>
                             @endif
                         </div>
-                        <span class="text-xs text-gray-500">By: {{ $task->creator->name ?? 'Unknown' }}</span>
+                        <div class="flex items-center space-x-2">
+                            <span class="text-xs text-gray-500">By: {{ $task->creator->name ?? 'Unknown' }}</span>
+                            @if (Auth::user()->role === 'admin' || Auth::id() === $task->created_by)
+                                <form action="{{ route('tasks.destroy', $task) }}" method="POST"
+                                    onsubmit="return confirm('Are you sure?');">
+                                    @csrf
+                                    @method('DELETE')
+                                    <button type="submit" class="text-red-400 hover:text-red-600">
+                                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
+                                            </path>
+                                        </svg>
+                                    </button>
+                                </form>
+                            @endif
+                        </div>
                     </div>
                 </a>
             @endforeach

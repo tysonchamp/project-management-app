@@ -31,6 +31,7 @@ Route::middleware(['auth'])->group(function () {
     Route::put('/profile', [App\Http\Controllers\ProfileController::class, 'update'])->name('profile.update');
 
     // Task Routes
+    Route::get('tasks/kanban', [TaskController::class, 'kanban'])->name('tasks.kanban');
     Route::resource('tasks', TaskController::class);
     Route::post('tasks/{task}/status', [TaskController::class, 'updateStatus'])->name('tasks.updateStatus');
 

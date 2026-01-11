@@ -15,6 +15,42 @@
             </div>
 
             <div class="mb-4">
+                <label for="priority" class="block text-gray-700 text-sm font-bold mb-2">Priority</label>
+                <select name="priority" id="priority"
+                    class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="low">Low</option>
+                    <option value="medium" selected>Medium</option>
+                    <option value="high">High</option>
+                    <option value="urgent">Urgent</option>
+                </select>
+                @error('priority')
+                    <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="mb-4">
+                <label for="type" class="block text-gray-700 text-sm font-bold mb-2">Type</label>
+                <select name="type" id="type"
+                    class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                    <option value="feature" selected>Feature</option>
+                    <option value="bug">Bug</option>
+                    <option value="improvement">Improvement</option>
+                </select>
+                @error('type')
+                    <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="mb-4">
+                <label for="due_date" class="block text-gray-700 text-sm font-bold mb-2">Due Date</label>
+                <input type="date" name="due_date" id="due_date"
+                    class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
+                @error('due_date')
+                    <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                @enderror
+            </div>
+
+            <div class="mb-4">
                 <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
                 <textarea name="description" id="description" rows="4" required
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
