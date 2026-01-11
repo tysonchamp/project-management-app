@@ -3,12 +3,10 @@
 @section('content')
     <div class="flex justify-between items-center mb-6">
         <h1 class="text-3xl font-bold text-gray-800">Project Credentials</h1>
-        @if (Auth::user()->role === 'admin')
-            <button onclick="document.getElementById('createModal').classList.remove('hidden')"
-                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
-                Add Credential
-            </button>
-        @endif
+        <button onclick="document.getElementById('createModal').classList.remove('hidden')"
+            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+            Add Credential
+        </button>
     </div>
 
     @if (session('success'))
@@ -57,9 +55,9 @@
                     @if (Auth::user()->role === 'admin')
                         <th class="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Access
                         </th>
-                        <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions
-                        </th>
                     @endif
+                    <th class="px-6 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider">Actions
+                    </th>
                 </tr>
             </thead>
             <tbody class="bg-white divide-y divide-gray-200">
@@ -117,15 +115,17 @@
                                     {{ $cred->accessList->count() }} Users
                                 </span>
                             </td>
-                            <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                        @endif
+                        <td class="px-6 py-4 whitespace-nowrap text-right text-sm font-medium">
+                            @if (Auth::user()->role === 'admin' || Auth::id() === $cred->created_by)
                                 <form action="{{ route('credentials.destroy', $cred) }}" method="POST"
                                     onsubmit="return confirm('Delete this credential?');" class="inline">
                                     @csrf
                                     @method('DELETE')
                                     <button type="submit" class="text-red-600 hover:text-red-900">Delete</button>
                                 </form>
-                            </td>
-                        @endif
+                            @endif
+                        </td>
                     </tr>
                 @empty
                     <tr>
@@ -194,7 +194,8 @@
                             <input type="checkbox" name="user_ids[]" value="{{ $user->id }}"
                                 id="user-{{ $user->id }}" class="mr-2 rounded border-gray-300">
                             <label for="user-{{ $user->id }}" class="text-sm text-gray-700">{{ $user->name }}
-                                ({{ $user->role }})</label>
+                                ({{ $user->role }})
+                            </label>
                         </div>
                     @endforeach
                 </div>
@@ -244,7 +245,8 @@
 
             // Populate delete input
             if (deleteInput) deleteInput.value = JSON.stringify(selected.map(cb => cb
-            .value)); // Controller expects simple array, we might need to adjust or let PHP parse array inputs if form is array
+                .value
+                )); // Controller expects simple array, we might need to adjust or let PHP parse array inputs if form is array
 
             // Populate share inputs
             if (shareInputsContainer) {

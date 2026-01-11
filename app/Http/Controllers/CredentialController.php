@@ -20,7 +20,11 @@ class CredentialController extends Controller
             $credentials = Credential::with('accessList')->get();
             $users = User::where('role', '!=', 'admin')->get(); // For sharing modal
         } else {
-            $credentials = $user->sharedCredentials;
+            // Show shared credentials OR credentials created by this user
+            $credentials = Credential::where('created_by', $user->id)
+                ->orWhereHas('accessList', function($q) use ($user) {
+                    $q->where('users.id', $user->id);
+                })->get();
             $users = collect(); // Regular users can't share
         }
 
@@ -32,10 +36,7 @@ class CredentialController extends Controller
      */
     public function store(Request $request)
     {
-        if (Auth::user()->role !== 'admin') {
-            abort(403);
-        }
-
+        // Allowed for all authenticated users
         $validated = $request->validate([
             'project_name' => 'required|string|max:255',
             'service_name' => 'required|string|max:255',
@@ -83,7 +84,8 @@ class CredentialController extends Controller
      */
     public function destroy(Credential $credential)
     {
-        if (Auth::user()->role !== 'admin') {
+        $user = Auth::user();
+        if ($user->role !== 'admin' && $credential->created_by !== $user->id) {
             abort(403);
         }
 
