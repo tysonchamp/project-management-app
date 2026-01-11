@@ -37,4 +37,11 @@ Route::middleware(['auth'])->group(function () {
 
     // Task Update Routes
     Route::post('tasks/{task}/updates', [TaskUpdateController::class, 'store'])->name('tasks.updates.store');
+
+    // Credential Routes
+    Route::get('credentials', [App\Http\Controllers\CredentialController::class, 'index'])->name('credentials.index');
+    Route::post('credentials', [App\Http\Controllers\CredentialController::class, 'store'])->name('credentials.store');
+    Route::post('credentials/share', [App\Http\Controllers\CredentialController::class, 'share'])->name('credentials.share'); // Bulk share
+    Route::delete('credentials/{credential}', [App\Http\Controllers\CredentialController::class, 'destroy'])->name('credentials.destroy');
+    Route::post('credentials/bulk-delete', [App\Http\Controllers\CredentialController::class, 'bulkDestroy'])->name('credentials.bulkDestroy');
 });

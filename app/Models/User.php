@@ -61,4 +61,9 @@ class User extends Authenticatable
     {
         return $this->hasMany(TaskUpdates::class, 'user_id');
     }
+
+    public function sharedCredentials()
+    {
+        return $this->belongsToMany(Credential::class, 'credential_user', 'user_id', 'credential_id')->withTimestamps();
+    }
 }
