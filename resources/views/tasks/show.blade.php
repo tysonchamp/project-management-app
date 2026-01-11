@@ -3,27 +3,81 @@
 @section('content')
     <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
         <!-- Task Details Column -->
+        <!-- Task Details Column -->
         <div class="lg:col-span-2 space-y-6">
-            <div class="bg-white shadow rounded-lg p-6">
-                <div class="flex justify-between items-start mb-4">
-                    <h1 class="text-2xl font-bold text-gray-900">{{ $task->title }}</h1>
+            <div class="bg-white shadow rounded-lg overflow-hidden">
+                <div class="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
+                    <h1 class="text-xl font-bold text-gray-900 truncate">
+                        {{ $task->title }}
+                    </h1>
                     <span
-                        class="px-3 py-1 rounded-full text-sm font-bold 
-                    @if ($task->status == 'todo') bg-gray-100 text-gray-800
-                    @elseif($task->status == 'in_progress') bg-blue-100 text-blue-800
-                    @else bg-green-100 text-green-800 @endif">
-                        {{ ucfirst(str_replace('_', ' ', $task->status)) }}
+                        class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide
+                        @if ($task->status === 'todo') bg-gray-200 text-gray-800 
+                        @elseif($task->status === 'in_progress') bg-blue-100 text-blue-800 
+                        @else bg-green-100 text-green-800 @endif">
+                        {{ str_replace('_', ' ', $task->status) }}
                     </span>
                 </div>
 
-                <div class="prose max-w-none text-gray-700 mb-6">
-                    {{ $task->description }}
-                </div>
+                <div class="p-6">
+                    <div class="prose max-w-none text-gray-700 mb-8">
+                        <h3 class="text-sm font-medium text-gray-500 uppercase tracking-wider mb-2">Description</h3>
+                        <p class="whitespace-pre-line">{{ $task->description }}</p>
+                    </div>
 
-                <div class="border-t border-gray-100 pt-4 flex justify-between items-center text-sm text-gray-500">
-                    <span>Created by: <span
-                            class="font-medium text-gray-800">{{ $task->creator->name ?? 'Unknown' }}</span></span>
-                    <span>{{ $task->created_at->format('M d, Y h:i A') }}</span>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-6 border-t border-gray-100 pt-6">
+                        <div>
+                            <span class="block text-sm font-medium text-gray-500 mb-1">Priority</span>
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium 
+                                @if ($task->priority === 'urgent') bg-red-100 text-red-800 
+                                @elseif($task->priority === 'high') bg-orange-100 text-orange-800 
+                                @elseif($task->priority === 'medium') bg-yellow-100 text-yellow-800 
+                                @else bg-green-100 text-green-800 @endif">
+                                {{ ucfirst($task->priority) }}
+                            </span>
+                        </div>
+                        <div>
+                            <span class="block text-sm font-medium text-gray-500 mb-1">Type</span>
+                            <span
+                                class="inline-flex items-center px-2.5 py-0.5 rounded-full text-xs font-medium bg-purple-100 text-purple-800">
+                                {{ ucfirst($task->type) }}
+                            </span>
+                        </div>
+                        <div>
+                            <span class="block text-sm font-medium text-gray-500 mb-1">Due Date</span>
+                            <span class="text-sm text-gray-900 font-medium">
+                                {{ $task->due_date ? $task->due_date->format('M d, Y') : 'No Due Date' }}
+                                @if ($task->due_date && $task->due_date->isPast() && $task->status !== 'done')
+                                    <span class="text-red-600 font-bold text-xs ml-1">(Overdue)</span>
+                                @endif
+                            </span>
+                        </div>
+                        <div>
+                            <span class="block text-sm font-medium text-gray-500 mb-1">Created By</span>
+                            <div class="flex items-center">
+                                <span
+                                    class="text-sm text-gray-900 font-medium">{{ $task->creator->name ?? 'Unknown' }}</span>
+                                <span class="text-xs text-gray-500 ml-2">({{ $task->created_at->format('M d, Y') }})</span>
+                            </div>
+                        </div>
+                        <div class="md:col-span-2">
+                            <span class="block text-sm font-medium text-gray-500 mb-2">Assigned To</span>
+                            <div class="flex flex-wrap gap-2">
+                                @forelse($task->assignees as $assignee)
+                                    <div class="flex items-center bg-gray-50 rounded-full px-3 py-1 border border-gray-200">
+                                        <div
+                                            class="h-5 w-5 rounded-full bg-indigo-100 flex items-center justify-center text-indigo-700 font-bold text-xs mr-2">
+                                            {{ substr($assignee->name, 0, 2) }}
+                                        </div>
+                                        <span class="text-sm text-gray-700">{{ $assignee->name }}</span>
+                                    </div>
+                                @empty
+                                    <span class="text-sm text-gray-500 italic">No assignees</span>
+                                @endforelse
+                            </div>
+                        </div>
+                    </div>
                 </div>
             </div>
 
