@@ -25,7 +25,7 @@ class OneSignalService
      * @param string|null $url Optional URL to open
      * @return void
      */
-    public function sendNotification(array $userIds, string $title, string $message, string $url = null)
+    public function sendNotification(array $userIds, string $title, string $message, $url = null)
     {
         if (empty($this->appId) || empty($this->apiKey)) {
             Log::warning('OneSignal keys not configured.');

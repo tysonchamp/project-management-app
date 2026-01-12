@@ -17,12 +17,16 @@ class TaskUpdateController extends Controller
             'update' => ['required', 'string'],
         ]);
 
-        TaskUpdates::create([
-            'task_id' => $taskId,
-            'user_id' => Auth::id() ?? 1,
-            'update' => $validated['update'],
-        ]);
+        try {
+            TaskUpdates::create([
+                'task_id' => $taskId,
+                'user_id' => Auth::id() ?? 1,
+                'update' => $validated['update'],
+            ]);
 
-        return back()->with('success', 'Update added successfully.');
+            return back()->with('success', 'Update added successfully.');
+        } catch (\Throwable $th) {
+            return back()->with('error', 'Something went wrong. Please try again.');
+        }
     }
 }

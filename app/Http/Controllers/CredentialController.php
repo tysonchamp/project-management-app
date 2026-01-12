@@ -2,10 +2,13 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\Credential;
 use App\Models\User;
+use App\Models\Credential;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Log;
 use Illuminate\Support\Facades\Auth;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\ValidationException;
 
 class CredentialController extends Controller
 {
@@ -36,27 +39,53 @@ class CredentialController extends Controller
      */
     public function store(Request $request)
     {
-        // Allowed for all authenticated users
-        $validated = $request->validate([
-            'project_name' => 'required|string|max:255',
-            'service_name' => 'required|string|max:255',
-            'username' => 'nullable|string|max:255',
-            'password' => 'required|string',
-            'description' => 'nullable|string',
-        ]);
+        try {
+            // Allowed for all authenticated users
+            $validated = $request->validate([
+                'project_name' => 'required|string|max:255',
+                'service_name' => 'required|string|max:255',
+                'username' => 'nullable|string|max:255',
+                'password' => 'required|string',
+                'description' => 'nullable|string',
+            ]);
 
-        $credential = Credential::create([
-            ...$validated,
-            'created_by' => Auth::id(),
-        ]);
 
-        \App\Services\LogActivity::record(
-            'create_credential', 
-            "Created credential for {$credential->project_name} - {$credential->service_name}", 
-            $credential
-        );
+            DB::transaction(function () use ($validated) {
+                $credential = Credential::create([
+                    ...$validated,
+                    'created_by' => Auth::id(),
+                ]);
 
-        return back()->with('success', 'Credential added successfully.');
+                \App\Services\LogActivity::record(
+                    'create_credential', 
+                    "Created credential for {$credential->project_name} - {$credential->service_name}", 
+                    $credential
+                );
+            });
+
+            return back()->with('success', 'Credential added successfully.');
+
+        } catch (ValidationException $th) {
+            Log::error('Task creation failed', [
+                'error' => $th->getMessage(),
+                'trace' => $th->getTraceAsString(),
+                'user_id' => Auth::id(),
+            ]);
+
+            return redirect()->back()->withInput()->with('error', $th->validator->errors()->first());
+
+        } catch (\Throwable $th) {
+            Log::error('credential creation failed', [
+                'error' => $th->getMessage(),
+                'trace' => $th->getTraceAsString(),
+                'user_id' => Auth::id(),
+            ]);
+
+            return redirect()
+            ->back()
+            ->withInput()
+            ->with('error', 'Something went wrong. Please try again.');
+        }
     }
 
     /**
@@ -68,27 +97,36 @@ class CredentialController extends Controller
             abort(403);
         }
 
-        $validated = $request->validate([
-            'credential_ids' => 'required|array',
-            'credential_ids.*' => 'exists:credentials,id',
-            'user_ids' => 'array', // Empty means revoke all
-            'user_ids.*' => 'exists:users,id',
-        ]);
+        try {
+            $validated = $request->validate([
+                'credential_ids' => 'required|array',
+                'credential_ids.*' => 'exists:credentials,id',
+                'user_ids' => 'array', // Empty means revoke all
+                'user_ids.*' => 'exists:users,id',
+            ]);
 
-        $credentials = Credential::whereIn('id', $validated['credential_ids'])->get();
-        $users = $validated['user_ids'] ?? [];
+            DB::transaction(function () use ($validated) {
+                $credentials = Credential::whereIn('id', $validated['credential_ids'])->get();
+                $users = $validated['user_ids'] ?? [];
 
-        foreach ($credentials as $credential) {
-            $credential->accessList()->sync($users);
-            
-            \App\Services\LogActivity::record(
-                'share_credential', 
-                "Updated sharing settings for credential {$credential->id}", 
-                $credential
-            );
+                foreach ($credentials as $credential) {
+                    $credential->accessList()->sync($users);
+                    
+                    \App\Services\LogActivity::record(
+                        'share_credential', 
+                        "Updated sharing settings for credential {$credential->id}", 
+                        $credential
+                    );
+                }
+            });
+
+            return back()->with('success', 'Successfully sharing settings updated.');
+
+        } catch (ValidationException $th) {
+            return redirect()->back()->with('error', $th->validator->errors()->first());
+        } catch (\Throwable $th) {
+            return redirect()->back()->with('error', 'Something went wrong. Please try again.');
         }
-
-        return back()->with('success', 'Sharing settings updated.');
     }
 
     /**
@@ -101,15 +139,23 @@ class CredentialController extends Controller
             abort(403);
         }
 
-        \App\Services\LogActivity::record(
-            'delete_credential', 
-            "Deleted credential for {$credential->project_name}", 
-            $credential
-        );
+        try {
+            DB::transaction(function () use ($credential) {
+                \App\Services\LogActivity::record(
+                    'delete_credential', 
+                    "Deleted credential for {$credential->project_name}", 
+                    $credential
+                );
 
-        $credential->delete();
+                $credential->delete();
+            });
 
-        return back()->with('success', 'Credential deleted.');
+            return back()->with('success', 'Successfully credential deleted.');
+        } catch (\Throwable $th) {
+            return redirect()->back()->with('error', 'Something went wrong. Please try again.');
+        }
+
+        
     }
 
     /**
@@ -126,8 +172,15 @@ class CredentialController extends Controller
             'credential_ids.*' => 'exists:credentials,id',
         ]);
 
-        Credential::whereIn('id', $validated['credential_ids'])->delete();
+        try {
+            DB::transaction(function () use ($validated) {
+                Credential::whereIn('id', $validated['credential_ids'])->delete();
+            });
 
-        return back()->with('success', 'Selected credentials deleted.');
+            return back()->with('success', 'Successfully selected credentials deleted.');
+
+        } catch (\Throwable $th) {
+            return redirect()->back()->with('error', 'Something went wrong. Please try again.');
+        }
     }
 }

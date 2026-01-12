@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\User;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Validation\Rule;
 
@@ -42,14 +43,17 @@ class AdminController extends Controller
             'role' => ['required', Rule::in(['admin', 'project_manager', 'developer'])],
         ]);
 
-        User::create([
-            'name' => $validated['name'],
-            'email' => $validated['email'],
-            'password' => Hash::make($validated['password']),
-            'role' => $validated['role'],
-        ]);
-
-        return redirect()->route('admin.dashboard')->with('success', 'User created successfully.');
+        try {
+            User::create([
+                'name' => $validated['name'],
+                'email' => $validated['email'],
+                'password' => Hash::make($validated['password']),
+                'role' => $validated['role'],
+            ]);
+            return redirect()->route('admin.dashboard')->with('success', 'User created successfully.');
+        } catch (\Throwable $th) {
+            return redirect()->back()->withInput()->with('error', 'Something went wrong. Please try again.');
+        }
     }
 
     /**
@@ -72,17 +76,21 @@ class AdminController extends Controller
             'password' => ['nullable', 'string', 'min:8', 'confirmed'],
         ]);
 
-        $user->name = $validated['name'];
-        $user->email = $validated['email'];
-        $user->role = $validated['role'];
+        try {
+            $user->name = $validated['name'];
+            $user->email = $validated['email'];
+            $user->role = $validated['role'];
 
-        if ($request->filled('password')) {
-            $user->password = Hash::make($validated['password']);
+            if ($request->filled('password')) {
+                $user->password = Hash::make($validated['password']);
+            }
+
+            $user->save();
+
+            return redirect()->route('admin.dashboard')->with('success', 'User updated successfully.');
+        } catch (\Throwable $th) {
+            return redirect()->back()->with('error', 'Something went wrong. Please try again.');
         }
-
-        $user->save();
-
-        return redirect()->route('admin.dashboard')->with('success', 'User updated successfully.');
     }
 
     /**
@@ -90,12 +98,15 @@ class AdminController extends Controller
      */
     public function destroyUser(User $user)
     {
-        if ($user->id === auth()->id()) {
+        if ($user->id === Auth::id()) {
             return back()->with('error', 'You cannot delete yourself.');
         }
-        
-        $user->delete();
 
-        return redirect()->route('admin.dashboard')->with('success', 'User deleted successfully.');
+        try {
+            $user->delete();
+            return redirect()->route('admin.dashboard')->with('success', 'User deleted successfully.');
+        } catch (\Throwable $th) {
+            return redirect()->back()->with('error', 'Something went wrong. Please try again.');
+        }
     }
 }

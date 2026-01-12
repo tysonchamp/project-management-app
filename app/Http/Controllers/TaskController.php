@@ -5,8 +5,10 @@ namespace App\Http\Controllers;
 use App\Models\Task;
 use App\Models\User;
 use Illuminate\Http\Request;
-use Illuminate\Support\Facades\Auth;
 use Illuminate\Validation\Rule;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\Log;
+use Illuminate\Support\Facades\Auth;
 
 class TaskController extends Controller
 {
@@ -98,33 +100,59 @@ class TaskController extends Controller
             'tags.*' => ['exists:tags,id'],
         ]);
 
-        $task = Task::create([
-            'title' => $validated['title'],
-            'description' => $validated['description'],
-            'priority' => $validated['priority'],
-            'type' => $validated['type'],
-            'due_date' => $validated['due_date'],
-            'created_by' => Auth::id(),
-            'status' => 'todo',
-        ]);
+        try {
+            $task = DB::transaction(function () use ($validated) {
+                $task = Task::create([
+                    'title' => $validated['title'],
+                    'description' => $validated['description'],
+                    'priority' => $validated['priority'],
+                    'type' => $validated['type'],
+                    'due_date' => $validated['due_date'],
+                    'created_by' => Auth::id(),
+                    'status' => 'todo',
+                ]);
 
-        $task->assignees()->sync($validated['assignees']);
+                $task->assignees()->sync($validated['assignees']);
 
-        if (!empty($validated['tags'])) {
-            $task->tags()->sync($validated['tags']);
+                if (!empty($validated['tags'])) {
+                    $task->tags()->sync($validated['tags']);
+                }
+
+                \App\Services\LogActivity::record('create_task', "Created task: {$task->title}", $task);
+
+                return $task; // Store task for use outside transaction
+            });
+
+            // Ensure notifications are sent ONLY after DB commit
+            DB::afterCommit(function () use ($task, $oneSignalService) {
+
+                // Reload relationship to be safe
+                $task->load('assignees');
+
+                if ($task->assignees->isNotEmpty()) {
+                    $oneSignalService->sendNotification(
+                        $task->assignees->pluck('id')->toArray(),
+                        'New Task Assigned',
+                        'You have been assigned to task: ' . $task->title,
+                        route('tasks.show', $task->id)
+                    );
+                }
+            });
+
+            return redirect()->route('tasks.index')->with('success', 'Task created successfully.');
+
+        } catch (\Throwable $e) {
+            Log::error('Task creation failed', [
+                'error' => $e->getMessage(),
+                'trace' => $e->getTraceAsString(),
+                'user_id' => Auth::id(),
+            ]);
+
+            return redirect()
+            ->back()
+            ->withInput()
+            ->with('error', 'Something went wrong. Please try again.');
         }
-
-        \App\Services\LogActivity::record('create_task', "Created task: {$task->title}", $task);
-
-        // Send Push Notification to Assignees
-        $oneSignalService->sendNotification(
-            $task->assignees->pluck('id')->toArray(),
-            'New Task Assigned',
-            'You have been assigned to task: ' . $task->title,
-            route('tasks.show', $task->id)
-        );
-
-        return redirect()->route('tasks.index')->with('success', 'Task created successfully.');
     }
 
     /**
@@ -132,7 +160,20 @@ class TaskController extends Controller
      */
     public function show(Task $task)
     {
-        $task->load(['assignees', 'updates.user', 'creator']);
+        $task->load([
+            'assignees', 
+            'updates.user', 
+            'creator',
+            'comments'=> [
+                'user', 
+                'attachments'
+            ],
+            'nonAttachableAttachments'=> [
+                'user'
+            ],
+        ]);
+
+        //dd($task);
         return view('tasks.show', compact('task'));
     }
 
@@ -164,20 +205,28 @@ class TaskController extends Controller
     public function attachTag(Request $request, Task $task)
     {
         $request->validate(['tag_id' => 'required|exists:tags,id']);
-        $task->tags()->syncWithoutDetaching([$request->tag_id]);
-        
-        \App\Services\LogActivity::record('update_task', "Added tag to task: {$task->title}", $task);
-        
-        return back()->with('success', 'Tag added.');
+        try {
+            DB::transaction(function () use ($task, $request) {
+                $task->tags()->syncWithoutDetaching([$request->tag_id]);
+                \App\Services\LogActivity::record('update_task', "Added tag to task: {$task->title}", $task);
+            });
+            return back()->with('success', 'Successfully attached tag.');
+        } catch (\Throwable $th) {
+            return back()->with('error', 'Something went wrong.');
+        } 
     }
 
     public function detachTag(Task $task, \App\Models\Tag $tag)
     {
-        $task->tags()->detach($tag->id);
-        
-        \App\Services\LogActivity::record('update_task', "Removed tag from task: {$task->title}", $task);
-        
-        return back()->with('success', 'Tag removed.');
+        try {
+            DB::transaction(function () use ($task, $tag) {
+               $task->tags()->detach($tag->id);
+                \App\Services\LogActivity::record('update_task', "Successfully Removed tag from task: {$task->title}", $task);
+            });
+            return back()->with('success', 'Successfully Removed tag from task');
+        } catch (\Throwable $th) {
+            return back()->with('error', 'Something went wrong.');
+        }
     }
 
     /**
@@ -188,48 +237,71 @@ class TaskController extends Controller
         $validated = $request->validate([
             'status' => ['required', Rule::in(['todo', 'in_progress', 'done'])],
         ]);
-        
-        $oldStatus = $task->status;
-        $task->update(['status' => $validated['status']]);
 
-        // Logic to track status change in TaskUpdates table (existing)
-        // ...
-        
-        \App\Services\LogActivity::record(
-            'update_task_status', 
-            "Updated status from $oldStatus to {$task->status}", 
-            $task
-        );
+        try {
 
-        // Notify participants about status change
-        $recipients = $task->assignees->pluck('id')->push($task->created_by)
-            ->reject(fn($id) => $id == Auth::id())
-            ->unique()
-            ->values()
-            ->toArray();
+            // Prepare variables for afterCommit
+            $oldStatus  = $task->status;
+            $recipients = [];
 
-        $oneSignalService->sendNotification(
-            $recipients,
-            'Task Status Updated',
-            "Task '{$task->title}' moved to " . str_replace('_', ' ', $task->status),
-            route('tasks.show', $task->id)
-        );
+            DB::transaction(function () use ($task, $validated, &$oldStatus, &$recipients) {
 
-        return back()->with('success', 'Task status updated.');
+                $oldStatus = $task->status;
+
+                $task->update([
+                    'status' => $validated['status'],
+                ]);
+
+                // Reload assignees safely
+                $task->load('assignees');
+
+                \App\Services\LogActivity::record(
+                    'update_task_status',
+                    "Updated status from {$oldStatus} to {$task->status}",
+                    $task
+                );
+
+                // Collect recipients
+                $recipients = $task->assignees
+                    ->pluck('id')
+                    ->push($task->created_by)
+                    ->reject(fn ($id) => $id === Auth::id()) // exclude actor
+                    ->unique()
+                    ->values()
+                    ->toArray();
+            });
+
+            DB::afterCommit(function () use ($task, $oneSignalService, $recipients) {
+                if (!empty($recipients)) {
+                    $oneSignalService->sendNotification(
+                        $recipients,
+                        'Task Status Updated',
+                        "Task '{$task->title}' moved to " . str_replace('_', ' ', $task->status),
+                        route('tasks.show', $task->id)
+                    );
+                }
+            });
+            return back()->with('success', 'Task status updated.');
+
+        } catch (\Throwable $th) {
+            return back()->with('error', 'Something went wrong.');
+        }
     }
 
     public function destroy(Task $task)
     {
         $user = Auth::user();
-
         if ($user->role !== 'admin' && $user->id !== $task->created_by) {
             abort(403, 'Unauthorized action.');
         }
-
-        \App\Services\LogActivity::record('delete_task', "Deleted task: {$task->title}", $task);
-        
-        $task->delete();
-
-        return back()->with('success', 'Task deleted successfully.');
+        try {
+            DB::transaction(function () use ($task) {
+                \App\Services\LogActivity::record('delete_task', "Deleted task: {$task->title}", $task);
+                $task->delete();
+            });
+            return back()->with('success', 'Task deleted successfully.');
+        } catch (\Throwable $th) {
+            return back()->with('error', 'Something went wrong.');
+        } 
     }
 }

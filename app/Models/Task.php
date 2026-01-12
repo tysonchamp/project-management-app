@@ -39,6 +39,12 @@ class Task extends Model
         return $this->hasMany(Attachment::class)->latest();
     }
 
+
+    public function nonAttachableAttachments()
+    {
+        return $this->hasMany(Attachment::class)->whereNull('attachable_id')->whereNull('attachable_type')->latest();
+    }
+
     public function updates()
     {
         return $this->hasMany(TaskUpdates::class)->latest();

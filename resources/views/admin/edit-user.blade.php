@@ -9,19 +9,27 @@
             @method('PUT')
 
             <div class="mb-4">
-                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name <strong class="text-red-500">*</strong></label>
                 <input type="text" name="name" id="name" required value="{{ old('name', $user->name) }}"
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+
+                @error('name')
+                    <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-4">
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email <strong class="text-red-500">*</strong></label>
                 <input type="email" name="email" id="email" required value="{{ old('email', $user->email) }}"
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+
+                @error('email')
+                    <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-4">
-                <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Role <strong class="text-red-500">*</strong></label>
                 <select name="role" id="role" required
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
                     <option value="developer" {{ $user->role == 'developer' ? 'selected' : '' }}>Developer</option>
@@ -29,6 +37,10 @@
                     </option>
                     <option value="admin" {{ $user->role == 'admin' ? 'selected' : '' }}>Admin</option>
                 </select>
+
+                @error('role')
+                    <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-6 border-t border-gray-200 pt-4">
@@ -36,16 +48,24 @@
                         class="text-sm font-normal text-gray-500">(Leave blank to keep current)</span></h3>
 
                 <div class="mb-4">
-                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">New Password</label>
+                    <label for="password" class="block text-sm font-medium text-gray-700 mb-1">New Password </label>
                     <input type="password" name="password" id="password"
                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+
+                    @error('password')
+                        <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                    @enderror
                 </div>
 
                 <div class="mb-4">
                     <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">Confirm New
-                        Password</label>
+                        Password </label>
                     <input type="password" name="password_confirmation" id="password_confirmation"
                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+
+                    @error('password_confirmation')
+                        <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                    @enderror
                 </div>
             </div>
 

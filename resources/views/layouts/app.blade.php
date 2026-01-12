@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <title>Project Management App</title>
+    <title>{{ env('APP_NAME') ?? 'Project Management App' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
     <script>
@@ -41,25 +41,25 @@
                     </div>
                     <div class="hidden sm:-my-px sm:ml-10 sm:flex sm:space-x-8">
                         <a href="{{ route('tasks.index') }}"
-                            class="border-indigo-500 text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            class="{{ request()->routeIs('tasks.*') ? 'border-indigo-500' : 'border-transparent' }} text-gray-900 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Tasks
                         </a>
                         <a href="{{ route('credentials.index') }}"
-                            class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            class="{{ request()->routeIs('credentials.*') ? 'border-indigo-500' : 'border-transparent' }} text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Credentials
                         </a>
                         @if (Auth::user()->role === 'admin')
                             <a href="{{ route('admin.dashboard') }}"
-                                class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                class="{{ (request()->routeIs('admin.users.*') || request()->routeIs('admin.dashboard') )? 'border-indigo-500' : 'border-transparent' }} text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                 Admin / Users
                             </a>
                             <a href="{{ route('admin.activity_logs.index') }}"
-                                class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                class="{{ request()->routeIs('admin.activity_logs.index') ? 'border-indigo-500' : 'border-transparent' }} text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                 Activity Logs
                             </a>
                         @endif
                         <a href="{{ route('profile.edit') }}"
-                            class="border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            class="{{ request()->routeIs('profile.edit') ? 'border-indigo-500' : 'border-transparent' }} text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Profile
                         </a>
                     </div>
@@ -88,6 +88,13 @@
                 <div class="mb-4 bg-green-100 border border-green-400 text-green-700 px-4 py-3 rounded relative"
                     role="alert">
                     <span class="block sm:inline">{{ session('success') }}</span>
+                </div>
+            @endif
+
+            @if (session('error'))
+                <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative"
+                    role="alert">
+                    <span class="block sm:inline">{{ session('error') }}</span>
                 </div>
             @endif
 

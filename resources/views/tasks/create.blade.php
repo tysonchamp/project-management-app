@@ -8,14 +8,14 @@
             @csrf
 
             <div class="mb-4">
-                <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Task Title</label>
+                <label for="title" class="block text-sm font-medium text-gray-700 mb-1">Task Title <strong class="text-red-500">*</strong></label>
                 <input type="text" name="title" id="title" required
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-                    placeholder="e.g. Implement Authorization">
+                    placeholder="e.g. Implement Authorization" old="{{ old('title') }}">
             </div>
 
             <div class="mb-4">
-                <label for="priority" class="block text-gray-700 text-sm font-bold mb-2">Priority</label>
+                <label for="priority" class="block text-gray-700 text-sm font-bold mb-2">Priority <strong class="text-red-500">*</strong></label>
                 <select name="priority" id="priority"
                     class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                     <option value="low">Low</option>
@@ -29,7 +29,7 @@
             </div>
 
             <div class="mb-4">
-                <label for="type" class="block text-gray-700 text-sm font-bold mb-2">Type</label>
+                <label for="type" class="block text-gray-700 text-sm font-bold mb-2">Type <strong class="text-red-500">*</strong></label>
                 <select name="type" id="type"
                     class="shadow border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">
                     <option value="feature" selected>Feature</option>
@@ -66,15 +66,15 @@
             </div>
 
             <div class="mb-4">
-                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description</label>
+                <label for="description" class="block text-sm font-medium text-gray-700 mb-1">Description <strong class="text-red-500">*</strong></label>
                 <textarea name="description" id="description" rows="4" required
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-                    placeholder="Describe the task details..."></textarea>
+                    placeholder="Describe the task details..." old="{{ old('description') }}"></textarea>
             </div>
 
             <div class="mb-6">
-                <label for="assignees" class="block text-sm font-medium text-gray-700 mb-1">Assign To</label>
-                <p class="text-xs text-gray-500 mb-2">Hold Cmd/Ctrl to select multiple users</p>
+                <label for="assignees" class="block text-sm font-medium text-gray-700 mb-1">Assign To <strong class="text-red-500">*</strong></label>
+                <p class="text-xs text-gray-500 mb-2">Hold Cmd/Ctrl to select multiple users </p>
                 <select name="assignees[]" id="assignees" multiple required
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border h-40">
                     @foreach ($users as $user)
