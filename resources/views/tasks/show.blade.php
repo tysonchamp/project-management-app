@@ -90,7 +90,8 @@
 
                     <div class="space-y-6 mb-8">
                         @php
-                            $combined = $task->comments->concat($task->attachments)->sortByDesc('created_at');
+                            $combined = $task->comments->concat($task->nonAttachableAttachments)->sortByDesc('created_at');
+                            //dump($combined);
                         @endphp
 
                         @forelse($combined as $item)
@@ -107,7 +108,7 @@
                                             class="font-medium text-gray-900">{{ $item->user->name ?? 'Unknown User' }}</span>
                                         <span class="text-gray-500">
                                             @if ($item instanceof App\Models\Comment)
-                                                commented
+                                                commented {{ $item->attachments->isNotEmpty() ? 'with attachments' : '' }}
                                             @else
                                                 uploaded a file
                                             @endif
@@ -115,28 +116,58 @@
                                         <span class="text-gray-400 mx-1">&middot;</span>
                                         <span class="text-gray-400">{{ $item->created_at->diffForHumans() }}</span>
                                     </div>
-                                    <div class="mt-1 text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100">
-                                        @if ($item instanceof App\Models\Comment)
-                                            {{ $item->body }}
-                                        @else
+
+                                    @if ($item instanceof App\Models\Comment)
+                                        <div class="mt-1 text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100">{{ $item->body }}</div>
+
+                                        @if ($item->attachments->isNotEmpty())
+                                            @foreach ($item->attachments as $attachment)
+                                                <div class="mt-1 ml-5 text-gray-700 bg-gray-50 p-1 rounded-lg border border-gray-100">
+                                                    <div class="flex items-center space-x-1">
+                                                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                            <path
+                                                                stroke-linecap="round"
+                                                                stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                                                            ></path>
+                                                        </svg>
+                                                        <a href="{{ Storage::url($attachment->file_path) }}" target="_blank"
+                                                            class="text-indigo-600 hover:text-indigo-800 underline">
+                                                            {{ $attachment->original_name }}
+                                                        </a>
+                                                    </div>
+                                                </div>
+                                            @endforeach
+                                            
+                                        @endif
+                                    @elseif ($item instanceof App\Models\Attachment)
+                                        <div class="mt-1 text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100">
                                             <div class="flex items-center space-x-2">
-                                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24"
-                                                    stroke="currentColor">
-                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
+                                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                                    <path
+                                                        stroke-linecap="round"
+                                                        stroke-linejoin="round"
+                                                        stroke-width="2"
+                                                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
+                                                    ></path>
                                                 </svg>
                                                 <a href="{{ Storage::url($item->file_path) }}" target="_blank"
                                                     class="text-indigo-600 hover:text-indigo-800 underline">
                                                     {{ $item->original_name }}
                                                 </a>
                                             </div>
-                                        @endif
-                                    </div>
+                                        </div>
+                                    @endif
+                                    
                                 </div>
                             </div>
                         @empty
                             <p class="text-gray-500 italic text-center py-4">No comments or files yet.</p>
                         @endforelse
+
+
+                        
                     </div>
 
                     <!-- Add Comment/File Form -->
@@ -146,7 +177,11 @@
                             <label for="body" class="sr-only">Comment</label>
                             <textarea name="body" id="body" rows="3"
                                 class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-3 border"
-                                placeholder="Add a comment..."></textarea>
+                                placeholder="Add a comment... (required)" required></textarea>
+
+                            @error('body')
+                                <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                            @enderror
                         </div>
                         <div class="flex justify-between items-center">
                             <div class="flex items-center">
@@ -159,14 +194,20 @@
                                     <span class="text-sm">Attach File</span>
                                 </label>
                                 <input type="file" name="attachment" id="attachment" class="hidden"
-                                    onchange="document.getElementById('file-name').textContent = this.files[0].name">
+                                    onchange="document.getElementById('file-name').textContent = this.files[0].name" accept=".png, .jpeg, .jpg, .webp, .pdf">
                                 <span id="file-name" class="ml-2 text-xs text-gray-500"></span>
+
+                                
                             </div>
+                            
                             <button type="submit"
                                 class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 transition text-sm font-medium">
                                 Post
                             </button>
                         </div>
+                        @error('attachment')
+                            <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                        @enderror
                     </form>
                 </div>
 

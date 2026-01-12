@@ -18,6 +18,7 @@ return new class extends Migration
             $table->string('file_path');
             $table->string('original_name');
             $table->string('mime_type')->nullable();
+            $table->nullableMorphs('attachable');
             $table->timestamps();
         });
     }

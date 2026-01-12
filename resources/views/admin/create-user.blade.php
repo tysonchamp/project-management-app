@@ -8,40 +8,60 @@
             @csrf
 
             <div class="mb-4">
-                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name</label>
+                <label for="name" class="block text-sm font-medium text-gray-700 mb-1">Name <strong class="text-red-500">*</strong></label>
                 <input type="text" name="name" id="name" required
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-                    placeholder="John Doe">
+                    placeholder="John Doe" value="{{ old('name') }}">
+
+                @error('name')
+                    <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-4">
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email</label>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email <strong class="text-red-500">*</strong></label>
                 <input type="email" name="email" id="email" required
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
-                    placeholder="john@example.com">
+                    placeholder="john@example.com" value="{{ old('email') }}">
+
+                @error('email')
+                    <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-4">
-                <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Role</label>
+                <label for="role" class="block text-sm font-medium text-gray-700 mb-1">Role <strong class="text-red-500">*</strong></label>
                 <select name="role" id="role" required
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
                     <option value="developer">Developer</option>
                     <option value="project_manager">Project Manager</option>
                     <option value="admin">Admin</option>
                 </select>
+
+                @error('role')
+                    <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-6">
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password <strong class="text-red-500">*</strong></label>
                 <input type="password" name="password" id="password" required
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+
+                @error('password')
+                    <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-6">
                 <label for="password_confirmation" class="block text-sm font-medium text-gray-700 mb-1">Confirm
-                    Password</label>
+                    Password <strong class="text-red-500">*</strong></label>
                 <input type="password" name="password_confirmation" id="password_confirmation" required
                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border">
+
+                @error('password_confirmation')
+                    <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="flex justify-end">
