@@ -18,7 +18,7 @@
     <div class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
         <h2 class="text-2xl font-bold mb-6 text-center text-gray-800">Sign In</h2>
 
-        @if ($errors->any())
+        {{-- @if ($errors->any())
             <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative">
                 <ul>
                     @foreach ($errors->all() as $error)
@@ -26,41 +26,47 @@
                     @endforeach
                 </ul>
             </div>
+        @endif --}}
+        @if (session('error'))
+            <div class="mb-4 bg-red-100 border border-red-400 text-red-700 px-4 py-3 rounded relative" role="alert">
+                <span class="block sm:inline">{{ session('error') }}</span>
+            </div>
         @endif
 
         <form action="{{ route('login.post') }}" method="POST">
             @csrf
             <div class="mb-4">
-                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address</label>
+                <label for="email" class="block text-sm font-medium text-gray-700 mb-1">Email Address <strong
+                        class="text-red-500">*</strong></label>
                 <input type="email" name="email" id="email" required autofocus
-                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border" value="{{ old('email') }}">
+                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border"
+                    value="{{ old('email') }}">
+                @error('email')
+                    <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                @enderror
             </div>
 
             <div class="mb-6">
-                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password</label>
+                <label for="password" class="block text-sm font-medium text-gray-700 mb-1">Password <strong
+                        class="text-red-500">*</strong></label>
 
                 <div class="relative">
-                    <input
-                        type="password"
-                        name="password"
-                        id="password"
-                        required
+                    <input type="password" name="password" id="password" required
                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border pr-10">
+                    @error('password')
+                        <p class="text-red-500 text-xs italic">{{ $message }}</p>
+                    @enderror
 
                     <!-- Toggle Button -->
-                    <button
-                        type="button"
-                        onclick="togglePassword()"
+                    <button type="button" onclick="togglePassword()"
                         class="absolute inset-y-0 right-0 px-3 flex items-center text-gray-500 hover:text-gray-700">
 
                         <!-- Eye Icon -->
-                        <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg"
-                            class="h-5 w-5" fill="none" viewBox="0 0 24 24"
-                            stroke="currentColor">
+                        <svg id="eyeIcon" xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none"
+                            viewBox="0 0 24 24" stroke="currentColor">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7
                                 -1.274 4.057-5.064 7-9.542 7
                                 -4.477 0-8.268-2.943-9.542-7z" />
                         </svg>
