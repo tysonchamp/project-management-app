@@ -64,4 +64,9 @@ class Task extends Model
     {
         return $this->belongsToMany(Tag::class, 'task_tag');
     }
+
+    public function subTasks()
+    {
+        return $this->hasMany(SubTask::class);
+    }
 }
