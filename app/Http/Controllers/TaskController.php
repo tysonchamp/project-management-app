@@ -23,6 +23,17 @@ class TaskController extends Controller
 
         $query = Task::with('assignees', 'creator', 'tags');
 
+        // if user is admin or project manager show all else show only assigned tasks and created by user
+        if ($user->role == 'admin' || $user->role == 'project_manager') {
+            // No filtering
+        } else {
+            //  with created by user or assigned to user
+            $query->whereHas('assignees', function ($q) use ($user) {
+                $q->where('users.id', $user->id);
+            });
+            $query->orWhere('created_by', $user->id);
+        }
+
         // Status Filter
         if ($status && in_array($status, ['todo', 'in_progress', 'done'])) {
             $query->where('status', $status);
