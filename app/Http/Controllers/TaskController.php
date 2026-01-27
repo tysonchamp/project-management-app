@@ -240,7 +240,7 @@ class TaskController extends Controller
         }
     }
 
-    public function update(Request $request, Task $task)
+    public function update(Request $request, Task $task, \App\Services\OneSignalService $oneSignalService)
     {
         $user = Auth::user();
         if ($user->role !== 'admin' && $user->id !== $task->created_by) {
@@ -266,6 +266,20 @@ class TaskController extends Controller
                 }
                 
                 \App\Services\LogActivity::record('update_task', "Updated task details: {$task->title}", $task);
+            });
+
+            // send notification to all assignees
+            $userIds = $task->assignees->pluck('id')->toArray();
+            // DB::afterCommit
+            DB::afterCommit(function () use ($userIds, $task, $oneSignalService) {
+                if ($userIds) {
+                    $oneSignalService->sendNotification(
+                        $userIds,
+                        'Task Updated',
+                        'Task: ' . $task->title . ' has been updated',
+                        route('tasks.show', $task->id)
+                    );
+                }
             });
 
             return back()->with('success', 'Task updated successfully.');
