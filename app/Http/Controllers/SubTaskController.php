@@ -143,7 +143,8 @@ class SubTaskController extends Controller
 
     public function destroy(SubTask $subTask)
     {
-        if (!Auth::user()->isAdmin()) {
+        $subTask->load('task');
+        if (!Auth::user()->isAdmin() && Auth::id() !== $subTask->task->created_by) {
             abort(403, 'Unauthorized action.');
         }
 

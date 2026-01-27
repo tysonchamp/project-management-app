@@ -7,9 +7,21 @@
         <div class="lg:col-span-2 space-y-6">
             <div class="bg-white shadow rounded-lg overflow-hidden">
                 <div class="px-6 py-5 border-b border-gray-200 bg-gray-50 flex justify-between items-center">
-                    <h1 class="text-xl font-bold text-gray-900 truncate">
-                        {{ $task->title }}
-                    </h1>
+                    <div class="flex items-center gap-2">
+                        <h1 class="text-xl font-bold text-gray-900 truncate">
+                            {{ $task->title }}
+                        </h1>
+                        @if (auth()->user()->isAdmin() || auth()->id() === $task->created_by)
+                            <button onclick="document.getElementById('edit-task-modal').classList.remove('hidden')"
+                                class="text-gray-400 hover:text-indigo-600 transition">
+                                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                        d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z">
+                                    </path>
+                                </svg>
+                            </button>
+                        @endif
+                    </div>
                     <span
                         class="px-3 py-1 rounded-full text-xs font-bold uppercase tracking-wide
                         @if ($task->status === 'todo') bg-gray-200 text-gray-800 
@@ -249,7 +261,7 @@
                                     @endif
                                 </div>
                                 <div class="flex items-center">
-                                    @if (auth()->user()->isAdmin())
+                                    @if (auth()->user()->isAdmin() || auth()->id() === $subTask->task->created_by)
                                         <form action="{{ route('subtasks.destroy', $subTask) }}" method="POST"
                                             onsubmit="return confirm('Are you sure?')">
                                             @csrf @method('DELETE')
@@ -619,6 +631,59 @@
                 </div>
             </div>
 
+        </div>
+    </div>
+    <!-- Edit Task Modal -->
+    <div id="edit-task-modal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title"
+        role="dialog" aria-modal="true">
+        <div class="flex items-end justify-center min-h-screen pt-4 px-4 pb-20 text-center sm:block sm:p-0">
+            <div class="fixed inset-0 bg-gray-500 bg-opacity-75 transition-opacity" aria-hidden="true"
+                onclick="document.getElementById('edit-task-modal').classList.add('hidden')"></div>
+            <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
+            <div
+                class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                <form action="{{ route('tasks.update', $task) }}" method="POST">
+                    @csrf @method('PUT')
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Title</label>
+                        <input type="text" name="title" value="{{ $task->title }}"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Description</label>
+                        <textarea name="description" rows="4"
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm">{{ $task->description }}</textarea>
+                    </div>
+
+                    <div class="mb-4">
+                        <label class="block text-sm font-medium text-gray-700">Assignees</label>
+                        <select name="assignees[]" multiple
+                            class="mt-1 block w-full border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm h-32">
+                            @foreach ($users as $user)
+                                <option value="{{ $user->id }}"
+                                    {{ $task->assignees->contains($user->id) ? 'selected' : '' }}>
+                                    {{ $user->name }}
+                                </option>
+                            @endforeach
+                        </select>
+                        <p class="text-xs text-gray-500 mt-1">Hold Ctrl/Cmd to select multiple.</p>
+                    </div>
+
+                    <div class="mt-5 sm:mt-6 flex justify-end gap-2">
+                        <button type="button"
+                            class="inline-flex justify-center rounded-md border border-gray-300 shadow-sm px-4 py-2 bg-white text-base font-medium text-gray-700 hover:bg-gray-50 focus:outline-none sm:text-sm"
+                            onclick="document.getElementById('edit-task-modal').classList.add('hidden')">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="inline-flex justify-center rounded-md border border-transparent shadow-sm px-4 py-2 bg-indigo-600 text-base font-medium text-white hover:bg-indigo-700 focus:outline-none sm:text-sm">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
         </div>
     </div>
 @endsection

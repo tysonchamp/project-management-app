@@ -184,7 +184,8 @@ class TaskController extends Controller
         ]);
 
         //dd($task);
-        return view('tasks.show', compact('task'));
+        $users = User::all();
+        return view('tasks.show', compact('task', 'users'));
     }
 
     /**
@@ -234,6 +235,40 @@ class TaskController extends Controller
                 \App\Services\LogActivity::record('update_task', "Successfully Removed tag from task: {$task->title}", $task);
             });
             return back()->with('success', 'Successfully Removed tag from task');
+        } catch (\Throwable $th) {
+            return back()->with('error', 'Something went wrong.');
+        }
+    }
+
+    public function update(Request $request, Task $task)
+    {
+        $user = Auth::user();
+        if ($user->role !== 'admin' && $user->id !== $task->created_by) {
+            abort(403, 'Unauthorized');
+        }
+
+        $validated = $request->validate([
+            'title' => 'required|string|max:255',
+            'description' => 'required|string',
+            'assignees' => 'array',
+            'assignees.*' => 'exists:users,id',
+        ]);
+
+        try {
+            DB::transaction(function () use ($task, $validated) {
+                $task->update([
+                    'title' => $validated['title'],
+                    'description' => $validated['description'],
+                ]);
+
+                if (isset($validated['assignees'])) {
+                    $task->assignees()->sync($validated['assignees']);
+                }
+                
+                \App\Services\LogActivity::record('update_task', "Updated task details: {$task->title}", $task);
+            });
+
+            return back()->with('success', 'Task updated successfully.');
         } catch (\Throwable $th) {
             return back()->with('error', 'Something went wrong.');
         }
