@@ -68,6 +68,10 @@ Route::middleware(['auth'])->group(function () {
     // Note Routes
     Route::resource('notes', App\Http\Controllers\NoteController::class);
     Route::post('notes/{note}/share', [App\Http\Controllers\NoteController::class, 'share'])->name('notes.share');
+    // Chat Routes
+    Route::get('chat', [App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
+    Route::get('chat/messages', [App\Http\Controllers\ChatController::class, 'fetchMessages'])->name('chat.messages.fetch');
+    Route::post('chat/messages', [App\Http\Controllers\ChatController::class, 'sendMessage'])->name('chat.messages.send');
 });
 
 // php artisan migrate:refresh --seed along with cache clearing route
