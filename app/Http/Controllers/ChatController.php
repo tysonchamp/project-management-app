@@ -7,6 +7,8 @@ use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 
+use App\Services\OneSignalService;
+
 class ChatController extends Controller
 {
     public function index()
@@ -33,7 +35,7 @@ class ChatController extends Controller
         return response()->json($query->oldest()->get());
     }
 
-    public function sendMessage(Request $request)
+    public function sendMessage(Request $request, OneSignalService $oneSignal)
     {
         $data = [
             'sender_id' => Auth::id(),
@@ -46,6 +48,25 @@ class ChatController extends Controller
         }
 
         $message = ChatMessage::create($data);
+
+        // Send OneSignal Notification
+        $sender = Auth::user();
+        if ($data['is_group']) {
+            $userIds = User::where('id', '!=', $sender->id)->pluck('id')->toArray();
+            $title = "New Group Message";
+            $msg = $sender->name . ": " . $request->message;
+        } else {
+            $userIds = [$request->receiver_id];
+            $title = "New Message from " . $sender->name;
+            $msg = $request->message;
+        }
+
+        $oneSignal->sendNotification(
+            $userIds,
+            $title,
+            $msg,
+            route('chat.index')
+        );
 
         return response()->json($message->load('sender'));
     }
