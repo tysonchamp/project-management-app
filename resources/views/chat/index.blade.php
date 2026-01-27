@@ -94,11 +94,12 @@
         let pollInterval = null;
         let currentUserCheck = {{ Auth::id() }};
 
-        // Pagination tracking
+        // Pagination & State
         let firstMessageId = null;
         let lastMessageId = null;
         let isLoadingHistory = false;
         let hasMoreHistory = true;
+        let isPolling = false; // Lock to prevent race conditions
 
         function selectChat(userId, isGroup, name) {
             currentReceiverId = userId;
@@ -109,6 +110,7 @@
             lastMessageId = null;
             hasMoreHistory = true;
             isLoadingHistory = false;
+            isPolling = false;
 
             // Update Header
             document.getElementById('chat-header-name').textContent = name;
@@ -125,7 +127,7 @@
 
             // Highlight Active
             document.querySelectorAll('.user-chat-btn').forEach(b => b.classList.remove('bg-gray-100'));
-            document.querySelectorAll('button').forEach(b => b.classList.remove('bg-indigo-50')); // Clear group highlight
+            document.querySelectorAll('button').forEach(b => b.classList.remove('bg-indigo-50'));
 
             if (isGroup) {
                 document.getElementById('group-chat-btn').classList.add('bg-indigo-50');
@@ -133,14 +135,14 @@
                 document.getElementById('user-chat-btn-' + userId).classList.add('bg-gray-100');
             }
 
-            // Clear Container and Load Initial
+            // Clear Container
             const container = document.getElementById('messages-container');
             container.innerHTML = '<div class="text-center text-gray-400 mt-10">Loading conversations...</div>';
 
             if (pollInterval) clearInterval(pollInterval);
 
             loadInitialMessages();
-            pollInterval = setInterval(pollNewMessages, 3000); // Poll for new messages
+            pollInterval = setInterval(pollNewMessages, 3000);
         }
 
         async function loadInitialMessages() {
@@ -149,13 +151,16 @@
         }
 
         async function pollNewMessages() {
-            if (!lastMessageId) return; // Don't poll if we haven't loaded anything yet
+            if (!lastMessageId || isPolling) return;
+
+            isPolling = true;
             const messages = await fetchMessages({
                 after_id: lastMessageId
             });
             if (messages.length > 0) {
                 renderMessages(messages, 'append');
             }
+            isPolling = false;
         }
 
         async function loadOlderMessages() {
@@ -163,7 +168,6 @@
 
             isLoadingHistory = true;
 
-            // Save scroll height before loading
             const container = document.getElementById('messages-container');
             const oldScrollHeight = container.scrollHeight;
 
@@ -175,7 +179,6 @@
                 hasMoreHistory = false;
             } else {
                 renderMessages(messages, 'prepend');
-                // Restore scroll position
                 container.scrollTop = container.scrollHeight - oldScrollHeight;
             }
 
@@ -213,40 +216,46 @@
 
             if (messages.length === 0) return;
 
-            // Update IDs
-            const newFirstId = messages[0].id;
-            const newLastId = messages[messages.length - 1].id;
+            // Filter out duplicates before rendering
+            const uniqueMessages = messages.filter(msg => !document.getElementById('msg-' + msg.id));
+            if (uniqueMessages.length === 0 && mode !== 'initial') return;
+
+            // Update IDs based on the FULL batch (assuming sorted) to keep track correctly
+            const batchLastId = messages[messages.length - 1].id;
+            const batchFirstId = messages[0].id;
 
             if (mode === 'prepend') {
-                firstMessageId = newFirstId; // The oldest in this batch is the new global first
+                firstMessageId = batchFirstId;
             } else if (mode === 'append' || mode === 'initial') {
-                if (!firstMessageId) firstMessageId = newFirstId;
-                lastMessageId = newLastId;
+                if (!firstMessageId) firstMessageId = batchFirstId;
+                // Always update lastMessageId to the latest ID from the server
+                if (!lastMessageId || batchLastId > lastMessageId) {
+                    lastMessageId = batchLastId;
+                }
             }
 
             let html = '';
-            messages.forEach(msg => {
+            uniqueMessages.forEach(msg => {
                 const isMe = msg.sender_id == currentUserCheck;
                 const time = new Date(msg.created_at).toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit'
                 });
 
-                // Simple Bubble construction
                 const bubble = isMe ?
-                    `<div class="flex justify-end mb-4">
-                        <div class="max-w-xs lg:max-w-md bg-indigo-600 text-white rounded-lg py-2 px-4 shadow rounded-br-none">
-                            <p class="text-sm">${escapeHtml(msg.message)}</p>
-                            <p class="text-xs text-indigo-200 text-right mt-1">${time}</p>
-                        </div>
-                    </div>` :
-                    `<div class="flex justify-start mb-4">
-                         <div class="max-w-xs lg:max-w-md bg-white text-gray-800 rounded-lg py-2 px-4 shadow rounded-bl-none border border-gray-100">
-                            ${currentIsGroup ? `<p class="text-xs text-indigo-600 font-bold mb-1">${escapeHtml(msg.sender.name)}</p>` : ''}
-                            <p class="text-sm">${escapeHtml(msg.message)}</p>
-                            <p class="text-xs text-gray-400 mt-1">${time}</p>
-                        </div>
-                    </div>`;
+                    `<div id="msg-${msg.id}" class="flex justify-end mb-4">
+                    <div class="max-w-xs lg:max-w-md bg-indigo-600 text-white rounded-lg py-2 px-4 shadow rounded-br-none">
+                        <p class="text-sm">${escapeHtml(msg.message)}</p>
+                        <p class="text-xs text-indigo-200 text-right mt-1">${time}</p>
+                    </div>
+                </div>` :
+                    `<div id="msg-${msg.id}" class="flex justify-start mb-4">
+                     <div class="max-w-xs lg:max-w-md bg-white text-gray-800 rounded-lg py-2 px-4 shadow rounded-bl-none border border-gray-100">
+                        ${currentIsGroup ? `<p class="text-xs text-indigo-600 font-bold mb-1">${escapeHtml(msg.sender.name)}</p>` : ''}
+                        <p class="text-sm">${escapeHtml(msg.message)}</p>
+                        <p class="text-xs text-gray-400 mt-1">${time}</p>
+                    </div>
+                </div>`;
                 html += bubble;
             });
 
@@ -254,12 +263,10 @@
                 container.insertAdjacentHTML('afterbegin', html);
             } else {
                 container.insertAdjacentHTML('beforeend', html);
-                // Scroll to bottom only on initial or append (new messages)
                 container.scrollTop = container.scrollHeight;
             }
         }
 
-        // Scroll Event for History
         document.getElementById('messages-container').addEventListener('scroll', function() {
             if (this.scrollTop === 0) {
                 loadOlderMessages();
@@ -280,7 +287,7 @@
                 if (currentIsGroup) {
                     formData.append('is_group', '1');
                 } else {
-                    formData.append('receiver_id', currentReceiverId); // Fix: use currentReceiverId
+                    formData.append('receiver_id', currentReceiverId);
                 }
                 formData.append('_token', '{{ csrf_token() }}');
 
@@ -289,7 +296,8 @@
                     body: formData
                 });
 
-                pollNewMessages(); // Immediate fetch (incremental)
+                // Re-fetch intentionally to ensure sync, polling lock will handle race if any
+                pollNewMessages();
             } catch (error) {
                 console.error('Error sending message:', error);
                 alert('Failed to send message');
