@@ -94,9 +94,21 @@
         let pollInterval = null;
         let currentUserCheck = {{ Auth::id() }};
 
+        // Pagination tracking
+        let firstMessageId = null;
+        let lastMessageId = null;
+        let isLoadingHistory = false;
+        let hasMoreHistory = true;
+
         function selectChat(userId, isGroup, name) {
             currentReceiverId = userId;
             currentIsGroup = isGroup;
+
+            // Reset state
+            firstMessageId = null;
+            lastMessageId = null;
+            hasMoreHistory = true;
+            isLoadingHistory = false;
 
             // Update Header
             document.getElementById('chat-header-name').textContent = name;
@@ -112,101 +124,147 @@
             input.focus();
 
             // Highlight Active
-            document.querySelectorAll('button').forEach(b => b.classList.remove('bg-indigo-50', 'bg-gray-100'));
+            document.querySelectorAll('.user-chat-btn').forEach(b => b.classList.remove('bg-gray-100'));
+            document.querySelectorAll('button').forEach(b => b.classList.remove('bg-indigo-50')); // Clear group highlight
+
             if (isGroup) {
                 document.getElementById('group-chat-btn').classList.add('bg-indigo-50');
             } else {
                 document.getElementById('user-chat-btn-' + userId).classList.add('bg-gray-100');
             }
 
-            // Clear and Fetch
-            document.getElementById('messages-container').innerHTML =
-                '<div class="text-center text-gray-500 mt-4">Loading messages...</div>';
+            // Clear Container and Load Initial
+            const container = document.getElementById('messages-container');
+            container.innerHTML = '<div class="text-center text-gray-400 mt-10">Loading conversations...</div>';
 
             if (pollInterval) clearInterval(pollInterval);
-            fetchMessages();
-            pollInterval = setInterval(fetchMessages, 3000); // Poll every 3 seconds
+
+            loadInitialMessages();
+            pollInterval = setInterval(pollNewMessages, 3000); // Poll for new messages
         }
 
-        async function fetchMessages() {
-            if (!currentReceiverId && !currentIsGroup) return;
+        async function loadInitialMessages() {
+            const messages = await fetchMessages();
+            renderMessages(messages, 'initial');
+        }
+
+        async function pollNewMessages() {
+            if (!lastMessageId) return; // Don't poll if we haven't loaded anything yet
+            const messages = await fetchMessages({
+                after_id: lastMessageId
+            });
+            if (messages.length > 0) {
+                renderMessages(messages, 'append');
+            }
+        }
+
+        async function loadOlderMessages() {
+            if (isLoadingHistory || !hasMoreHistory || !firstMessageId) return;
+
+            isLoadingHistory = true;
+
+            // Save scroll height before loading
+            const container = document.getElementById('messages-container');
+            const oldScrollHeight = container.scrollHeight;
+
+            const messages = await fetchMessages({
+                before_id: firstMessageId
+            });
+
+            if (messages.length === 0) {
+                hasMoreHistory = false;
+            } else {
+                renderMessages(messages, 'prepend');
+                // Restore scroll position
+                container.scrollTop = container.scrollHeight - oldScrollHeight;
+            }
+
+            isLoadingHistory = false;
+        }
+
+        async function fetchMessages(extraParams = {}) {
+            if (!currentReceiverId && !currentIsGroup) return [];
 
             try {
                 const params = new URLSearchParams({
                     user_id: currentReceiverId || '',
-                    is_group: currentIsGroup ? '1' : '0'
+                    is_group: currentIsGroup ? '1' : '0',
+                    ...extraParams
                 });
 
                 const response = await fetch(`{{ route('chat.messages.fetch') }}?${params}`);
-                const messages = await response.json();
-
-                renderMessages(messages);
+                return await response.json();
             } catch (error) {
                 console.error('Error fetching messages:', error);
+                return [];
             }
         }
 
-        function renderMessages(messages) {
+        function renderMessages(messages, mode = 'append') {
             const container = document.getElementById('messages-container');
 
-            if (messages.length === 0) {
-                if (container.innerHTML.includes('Loading')) {
+            if (mode === 'initial') {
+                container.innerHTML = '';
+                if (messages.length === 0) {
                     container.innerHTML = '<div class="text-center text-gray-400 mt-10">No messages yet. Say hello!</div>';
+                    return;
                 }
-                return;
             }
 
-            // Simple diff check to avoid full re-render flickering if possible, 
-            // but for now we'll just re-render to ensure accuracy. 
-            // Ideally we'd append only new ones. for simplicity in this artifact, direct replacement.
-            // To improve UX, we check if we are at bottom to auto-scroll.
-            const isAtBottom = container.scrollHeight - container.scrollTop === container.clientHeight;
+            if (messages.length === 0) return;
+
+            // Update IDs
+            const newFirstId = messages[0].id;
+            const newLastId = messages[messages.length - 1].id;
+
+            if (mode === 'prepend') {
+                firstMessageId = newFirstId; // The oldest in this batch is the new global first
+            } else if (mode === 'append' || mode === 'initial') {
+                if (!firstMessageId) firstMessageId = newFirstId;
+                lastMessageId = newLastId;
+            }
 
             let html = '';
-            let lastDate = null;
-
             messages.forEach(msg => {
                 const isMe = msg.sender_id == currentUserCheck;
-                const date = new Date(msg.created_at).toLocaleDateString();
                 const time = new Date(msg.created_at).toLocaleTimeString([], {
                     hour: '2-digit',
                     minute: '2-digit'
                 });
 
-                if (date !== lastDate) {
-                    html += `<div class="text-center text-xs text-gray-400 my-4"><span>${date}</span></div>`;
-                    lastDate = date;
-                }
-
-                if (isMe) {
-                    html += `
-                    <div class="flex justify-end">
+                // Simple Bubble construction
+                const bubble = isMe ?
+                    `<div class="flex justify-end mb-4">
                         <div class="max-w-xs lg:max-w-md bg-indigo-600 text-white rounded-lg py-2 px-4 shadow rounded-br-none">
                             <p class="text-sm">${escapeHtml(msg.message)}</p>
                             <p class="text-xs text-indigo-200 text-right mt-1">${time}</p>
                         </div>
-                    </div>
-                `;
-                } else {
-                    html += `
-                    <div class="flex justify-start">
-                        <div class="max-w-xs lg:max-w-md bg-white text-gray-800 rounded-lg py-2 px-4 shadow rounded-bl-none border border-gray-100">
+                    </div>` :
+                    `<div class="flex justify-start mb-4">
+                         <div class="max-w-xs lg:max-w-md bg-white text-gray-800 rounded-lg py-2 px-4 shadow rounded-bl-none border border-gray-100">
                             ${currentIsGroup ? `<p class="text-xs text-indigo-600 font-bold mb-1">${escapeHtml(msg.sender.name)}</p>` : ''}
                             <p class="text-sm">${escapeHtml(msg.message)}</p>
                             <p class="text-xs text-gray-400 mt-1">${time}</p>
                         </div>
-                    </div>
-                `;
-                }
+                    </div>`;
+                html += bubble;
             });
 
-            // Only update if content is different (simple check)
-            if (container.innerHTML.length !== html.length) { // Weak check but sufficient for basic content changes
-                container.innerHTML = html;
-                // Scroll to bottom
+            if (mode === 'prepend') {
+                container.insertAdjacentHTML('afterbegin', html);
+            } else {
+                container.insertAdjacentHTML('beforeend', html);
+                // Scroll to bottom only on initial or append (new messages)
                 container.scrollTop = container.scrollHeight;
             }
         }
+
+        // Scroll Event for History
+        document.getElementById('messages-container').addEventListener('scroll', function() {
+            if (this.scrollTop === 0) {
+                loadOlderMessages();
+            }
+        });
 
         async function sendMessage(e) {
             e.preventDefault();
@@ -214,7 +272,6 @@
             const message = input.value.trim();
             if (!message) return;
 
-            // Optimistic UI update could go here
             input.value = '';
 
             try {
@@ -223,7 +280,7 @@
                 if (currentIsGroup) {
                     formData.append('is_group', '1');
                 } else {
-                    formData.append('receiver_id', currentReceiverId);
+                    formData.append('receiver_id', currentReceiverId); // Fix: use currentReceiverId
                 }
                 formData.append('_token', '{{ csrf_token() }}');
 
@@ -232,7 +289,7 @@
                     body: formData
                 });
 
-                fetchMessages(); // Immediate fetch
+                pollNewMessages(); // Immediate fetch (incremental)
             } catch (error) {
                 console.error('Error sending message:', error);
                 alert('Failed to send message');
@@ -240,6 +297,7 @@
         }
 
         function escapeHtml(text) {
+            if (!text) return '';
             const div = document.createElement('div');
             div.textContent = text;
             return div.innerHTML;

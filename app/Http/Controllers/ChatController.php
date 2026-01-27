@@ -32,7 +32,21 @@ class ChatController extends Controller
             });
         }
 
-        return response()->json($query->oldest()->get());
+        // Pagination: Load older messages
+        if ($request->before_id) {
+            $query->where('id', '<', $request->before_id);
+        }
+
+        // Polling: Load newer messages
+        if ($request->after_id) {
+            $query->where('id', '>', $request->after_id);
+        }
+
+        // Default limit 50, fetch latest first
+        $messages = $query->latest()->take(50)->get();
+
+        // Return in chronological order
+        return response()->json($messages->reverse()->values());
     }
 
     public function sendMessage(Request $request, OneSignalService $oneSignal)
