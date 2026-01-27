@@ -6,6 +6,7 @@ use App\Models\Note;
 use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
+use App\Services\OneSignalService;
 
 class NoteController extends Controller
 {
@@ -96,7 +97,7 @@ class NoteController extends Controller
     /**
      * Share note with users.
      */
-    public function share(Request $request, Note $note)
+    public function share(Request $request, Note $note, OneSignalService $oneSignalService)
     {
         if ($note->user_id !== Auth::id()) {
             abort(403, 'Unauthorized');
@@ -108,8 +109,22 @@ class NoteController extends Controller
         ]);
 
         if (isset($validated['users'])) {
+            // Identify newly added users
+            $currentSharedIds = $note->sharedWith()->pluck('users.id')->toArray();
+            $newlySharedIds = array_diff($validated['users'], $currentSharedIds);
+
             // Sync users (default can_edit = true)
             $note->sharedWith()->sync($validated['users']);
+
+            // Notify newly shared users
+            if (!empty($newlySharedIds)) {
+                $oneSignalService->sendNotification(
+                    array_values($newlySharedIds),
+                    'Note Shared',
+                    Auth::user()->name . ' shared a note with you: ' . ($note->title ?? 'Untitled Note'),
+                    route('notes.index')
+                );
+            }
         } else {
             $note->sharedWith()->detach();
         }
