@@ -65,6 +65,9 @@ Route::middleware(['auth'])->group(function () {
     Route::post('tasks/{task}/subtasks', [App\Http\Controllers\SubTaskController::class, 'store'])->name('tasks.subtasks.store');
     Route::put('subtasks/{subTask}', [App\Http\Controllers\SubTaskController::class, 'update'])->name('subtasks.update');
     Route::delete('subtasks/{subTask}', [App\Http\Controllers\SubTaskController::class, 'destroy'])->name('subtasks.destroy');
+    // Note Routes
+    Route::resource('notes', App\Http\Controllers\NoteController::class);
+    Route::post('notes/{note}/share', [App\Http\Controllers\NoteController::class, 'share'])->name('notes.share');
 });
 
 // php artisan migrate:refresh --seed along with cache clearing route

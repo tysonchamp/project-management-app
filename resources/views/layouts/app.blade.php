@@ -7,24 +7,24 @@
     <title>{{ env('APP_NAME') ?? 'Project Management App' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
     @if (!empty(env('ONESIGNAL_APP_ID')))
-    {{-- OneSignalSDKWorker.js must be served with content-type: application/javascript --}}
-    <script src="{{ asset('OneSignalSDKWorker.js') }}" type="application/javascript"></script>
-    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
-    <script>
-        window.OneSignalDeferred = window.OneSignalDeferred || [];
-        OneSignalDeferred.push(async function(OneSignal) {
-            await OneSignal.init({
-                appId: "{{ env('ONESIGNAL_APP_ID') }}",
-            });
-            OneSignal.Debug.setLogLevel("trace");
+        {{-- OneSignalSDKWorker.js must be served with content-type: application/javascript --}}
+        <script src="{{ asset('OneSignalSDKWorker.js') }}" type="application/javascript"></script>
+        <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+        <script>
+            window.OneSignalDeferred = window.OneSignalDeferred || [];
+            OneSignalDeferred.push(async function(OneSignal) {
+                await OneSignal.init({
+                    appId: "{{ env('ONESIGNAL_APP_ID') }}",
+                });
+                OneSignal.Debug.setLogLevel("trace");
 
-            @if (Auth::check())
-                OneSignal.User.PushSubscription.optIn();
-                await OneSignal.login("{{ (string) Auth::id() }}");
-            @endif
-        });
-    </script>
-    {{-- <div class='onesignal-customlink-container'></div> --}}
+                @if (Auth::check())
+                    OneSignal.User.PushSubscription.optIn();
+                    await OneSignal.login("{{ (string) Auth::id() }}");
+                @endif
+            });
+        </script>
+        {{-- <div class='onesignal-customlink-container'></div> --}}
     @endif
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
@@ -50,6 +50,10 @@
                         <a href="{{ route('credentials.index') }}"
                             class="{{ request()->routeIs('credentials.*') ? 'border-indigo-500' : 'border-transparent' }} text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                             Credentials
+                        </a>
+                        <a href="{{ route('notes.index') }}"
+                            class="{{ request()->routeIs('notes.*') ? 'border-indigo-500' : 'border-transparent' }} text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                            Notes
                         </a>
                         @if (Auth::user()->role === 'admin')
                             <a href="{{ route('admin.dashboard') }}"

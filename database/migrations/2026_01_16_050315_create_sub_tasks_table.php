@@ -11,16 +11,18 @@ return new class extends Migration
      */
     public function up(): void
     {
-        Schema::create('sub_tasks', function (Blueprint $table) {
-            $table->id();
-            $table->foreignId('task_id')->constrained()->onDelete('cascade');
-            $table->string('title');
-            $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
-            $table->enum('type', ['bug', 'feature', 'improvement'])->default('feature');
-            $table->foreignId('assigned_to')->nullable()->constrained('users')->onDelete('set null');
-            $table->enum('status', ['todo', 'in_progress', 'done'])->default('todo');
-            $table->timestamps();
-        });
+        if (!Schema::hasTable('sub_tasks')) {
+            Schema::create('sub_tasks', function (Blueprint $table) {
+                $table->id();
+                $table->foreignId('task_id')->constrained()->onDelete('cascade');
+                $table->string('title');
+                $table->enum('priority', ['low', 'medium', 'high', 'urgent'])->default('medium');
+                $table->enum('type', ['bug', 'feature', 'improvement'])->default('feature');
+                $table->foreignId('assigned_to')->nullable()->constrained('users')->onDelete('set null');
+                $table->enum('status', ['todo', 'in_progress', 'done'])->default('todo');
+                $table->timestamps();
+            });
+        }
     }
 
     /**

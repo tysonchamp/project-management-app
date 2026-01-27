@@ -71,4 +71,13 @@ class User extends Authenticatable
     {
         return $this->role === 'admin';
     }
+    public function ownedNotes()
+    {
+        return $this->hasMany(Note::class, 'user_id');
+    }
+
+    public function sharedNotes()
+    {
+        return $this->belongsToMany(Note::class, 'note_user')->withPivot('can_edit')->withTimestamps();
+    }
 }
