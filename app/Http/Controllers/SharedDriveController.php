@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\SharedFile;
+use App\Services\LogActivity;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Storage;
@@ -39,6 +40,9 @@ class SharedDriveController extends Controller
                 'description' => $request->description,
             ]);
 
+            // Create Activity Log
+            LogActivity::record('file_uploaded', "Uploaded file: {$filename}", $sharedFile);
+
             return response()->json($sharedFile->load('user'), 201);
         }
 
@@ -47,14 +51,17 @@ class SharedDriveController extends Controller
 
     public function destroy($id)
     {
-        $file = SharedFile::findOrFail($id);
-
         // Optional: Policy check (only owner or admin)
         // if ($file->user_id !== Auth::id()) { abort(403); }
+
+        $file = SharedFile::findOrFail($id);
 
         if (Storage::exists($file->file_path)) {
             Storage::delete($file->file_path);
         }
+
+        // Create Activity Log before deletion
+        LogActivity::record('file_deleted', "Deleted file: {$file->filename}", $file);
 
         $file->delete();
 
