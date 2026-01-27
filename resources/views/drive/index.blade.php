@@ -213,14 +213,14 @@
             if (!confirm('Are you sure you want to delete this file?')) return;
 
             try {
-                await axios.delete(`/drive/${id}`, {
-                    data: {
-                        _token: '{{ csrf_token() }}'
-                    }
+                await axios.post(`/drive/${id}`, {
+                    _method: 'DELETE',
+                    _token: '{{ csrf_token() }}'
                 });
                 window.location.reload();
             } catch (error) {
-                alert('Delete failed.');
+                console.error('Delete failed:', error);
+                alert('Delete failed. ' + (error.response?.data?.message || 'Check connection.'));
             }
         }
 
