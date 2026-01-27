@@ -151,13 +151,19 @@
         }
 
         async function pollNewMessages() {
-            if (!lastMessageId || isPolling) return;
+            if (isPolling) return;
 
             isPolling = true;
-            const messages = await fetchMessages({
+            const params = lastMessageId ? {
                 after_id: lastMessageId
-            });
+            } : {};
+            const messages = await fetchMessages(params);
+
             if (messages.length > 0) {
+                const container = document.getElementById('messages-container');
+                if (container.innerHTML.includes('No messages yet')) {
+                    container.innerHTML = '';
+                }
                 renderMessages(messages, 'append');
             }
             isPolling = false;
