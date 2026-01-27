@@ -72,6 +72,11 @@ Route::middleware(['auth'])->group(function () {
     Route::get('chat', [App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
     Route::get('chat/messages', [App\Http\Controllers\ChatController::class, 'fetchMessages'])->name('chat.messages.fetch');
     Route::post('chat/messages', [App\Http\Controllers\ChatController::class, 'sendMessage'])->name('chat.messages.send');
+
+    // Shared Drive Routes
+    Route::get('drive', [App\Http\Controllers\SharedDriveController::class, 'index'])->name('drive.index');
+    Route::post('drive/upload', [App\Http\Controllers\SharedDriveController::class, 'store'])->name('drive.store');
+    Route::delete('drive/{id}', [App\Http\Controllers\SharedDriveController::class, 'destroy'])->name('drive.destroy');
 });
 
 // php artisan migrate:refresh --seed along with cache clearing route
