@@ -6,7 +6,6 @@
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>{{ env('APP_NAME') ?? 'Project Management App' }}</title>
     <script src="https://cdn.tailwindcss.com"></script>
-    <script src="https://cdn.onesignal.com/sdks/OneSignalSDK.js" async=""></script>
     <script>
         window.OneSignal = window.OneSignal || [];
         OneSignal.push(function() {
@@ -29,6 +28,19 @@
             font-family: 'Inter', sans-serif;
         }
     </style>
+    {{-- OneSignalSDKWorker.js must be served with content-type: application/javascript --}}
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDKWorker.js" type="application/javascript"></script>
+    <script src="https://cdn.onesignal.com/sdks/web/v16/OneSignalSDK.page.js" defer></script>
+    <script>
+        window.OneSignalDeferred = window.OneSignalDeferred || [];
+        OneSignalDeferred.push(async function(OneSignal) {
+            await OneSignal.init({
+                appId: "{{ env('ONESIGNAL_APP_ID') }}",
+            });
+            OneSignal.Debug.setLogLevel("trace");
+        });
+    </script>
+    <div class='onesignal-customlink-container'></div>
 </head>
 
 <body class="bg-gray-50 text-gray-800 antialiased">
@@ -50,7 +62,7 @@
                         </a>
                         @if (Auth::user()->role === 'admin')
                             <a href="{{ route('admin.dashboard') }}"
-                                class="{{ (request()->routeIs('admin.users.*') || request()->routeIs('admin.dashboard') )? 'border-indigo-500' : 'border-transparent' }} text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
+                                class="{{ request()->routeIs('admin.users.*') || request()->routeIs('admin.dashboard') ? 'border-indigo-500' : 'border-transparent' }} text-gray-500 hover:text-gray-700 hover:border-gray-300 inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium">
                                 Admin / Users
                             </a>
                             <a href="{{ route('admin.activity_logs.index') }}"
