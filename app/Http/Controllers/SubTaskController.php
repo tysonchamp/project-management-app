@@ -15,9 +15,9 @@ class SubTaskController extends Controller
 {
     public function store(Request $request, Task $task, \App\Services\OneSignalService $oneSignalService)
     {
-        if (!Auth::user()->isAdmin()) {
-            abort(403, 'Unauthorized action.');
-        }
+        // if (!Auth::user()->isAdmin()) {
+        //     abort(403, 'Unauthorized action.');
+        // }
 
         $validated = $request->validate([
             'title' => 'required|string|max:255',

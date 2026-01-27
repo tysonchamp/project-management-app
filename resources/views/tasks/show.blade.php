@@ -85,81 +85,80 @@
             <div class="bg-white shadow rounded-lg overflow-hidden p-6">
                 <div class="flex justify-between items-center mb-4">
                     <h3 class="text-lg font-bold text-gray-900">Sub-tasks</h3>
-                    @if (auth()->user()->isAdmin())
-                        <button onclick="document.getElementById('create-subtask-form').classList.toggle('hidden')"
-                            class="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 transition">
-                            Add Sub-task
-                        </button>
-                    @endif
+                    {{-- @if (auth()->user()->isAdmin()) --}}
+                    <button onclick="document.getElementById('create-subtask-form').classList.toggle('hidden')"
+                        class="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 transition">
+                        Add Sub-task
+                    </button>
+                    {{-- @endif --}}
                 </div>
 
                 <!-- Create Sub-task Form -->
-                @if (auth()->user()->isAdmin())
-                    <div id="create-subtask-form" class="hidden mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
-                        <form action="{{ route('tasks.subtasks.store', $task) }}" method="POST"
-                            enctype="multipart/form-data">
-                            @csrf
-                            <div class="space-y-3">
+                {{-- @if (auth()->user()->isAdmin()) --}}
+                <div id="create-subtask-form" class="hidden mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                    <form action="{{ route('tasks.subtasks.store', $task) }}" method="POST" enctype="multipart/form-data">
+                        @csrf
+                        <div class="space-y-3">
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Title <strong
+                                        class="text-red-500">*</strong></label>
+                                <input type="text" name="title" required
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border sm:text-sm">
+                            </div>
+                            <div class="grid grid-cols-2 gap-4">
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Title <strong
+                                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Priority <strong
                                             class="text-red-500">*</strong></label>
-                                    <input type="text" name="title" required
+                                    <select name="priority"
                                         class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border sm:text-sm">
-                                </div>
-                                <div class="grid grid-cols-2 gap-4">
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Priority <strong
-                                                class="text-red-500">*</strong></label>
-                                        <select name="priority"
-                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border sm:text-sm">
-                                            <option value="low">Low</option>
-                                            <option value="medium" selected>Medium</option>
-                                            <option value="high">High</option>
-                                            <option value="urgent">Urgent</option>
-                                        </select>
-                                    </div>
-                                    <div>
-                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Type <strong
-                                                class="text-red-500">*</strong></label>
-                                        <select name="type"
-                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border sm:text-sm">
-                                            <option value="feature">Feature</option>
-                                            <option value="bug">Bug</option>
-                                            <option value="improvement">Improvement</option>
-                                        </select>
-                                    </div>
-                                </div>
-                                <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Assign To</label>
-                                    <select name="assigned_to"
-                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border sm:text-sm">
-                                        <option value="">Unassigned</option>
-                                        @foreach ($task->assignees as $user)
-                                            <option value="{{ $user->id }}">{{ $user->name }}</option>
-                                        @endforeach
+                                        <option value="low">Low</option>
+                                        <option value="medium" selected>Medium</option>
+                                        <option value="high">High</option>
+                                        <option value="urgent">Urgent</option>
                                     </select>
                                 </div>
                                 <div>
-                                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Attachments
-                                        (Mulitple)
-                                        <small
-                                            class="text-xs text-gray-500">(.jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.xlsx,.xls,.csv)</small>
-                                    </label>
-                                    <input type="file" name="attachments[]" multiple
-                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
-                                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.xlsx,.xls,.csv">
-                                </div>
-                                <div class="flex justify-end">
-                                    <button type="button"
-                                        onclick="document.getElementById('create-subtask-form').classList.add('hidden')"
-                                        class="mr-2 text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
-                                    <button type="submit"
-                                        class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700 transition">Save</button>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Type <strong
+                                            class="text-red-500">*</strong></label>
+                                    <select name="type"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border sm:text-sm">
+                                        <option value="feature">Feature</option>
+                                        <option value="bug">Bug</option>
+                                        <option value="improvement">Improvement</option>
+                                    </select>
                                 </div>
                             </div>
-                        </form>
-                    </div>
-                @endif
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Assign To</label>
+                                <select name="assigned_to"
+                                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border sm:text-sm">
+                                    <option value="">Unassigned</option>
+                                    @foreach ($task->assignees as $user)
+                                        <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                    @endforeach
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Attachments
+                                    (Mulitple)
+                                    <small
+                                        class="text-xs text-gray-500">(.jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.xlsx,.xls,.csv)</small>
+                                </label>
+                                <input type="file" name="attachments[]" multiple
+                                    class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                    accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.xlsx,.xls,.csv">
+                            </div>
+                            <div class="flex justify-end">
+                                <button type="button"
+                                    onclick="document.getElementById('create-subtask-form').classList.add('hidden')"
+                                    class="mr-2 text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                                <button type="submit"
+                                    class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700 transition">Save</button>
+                            </div>
+                        </div>
+                    </form>
+                </div>
+                {{-- @endif --}}
 
                 <!-- Sub-tasks List -->
                 <div class="space-y-3">
