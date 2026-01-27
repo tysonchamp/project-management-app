@@ -81,6 +81,197 @@
                 </div>
             </div>
 
+            <!-- Sub-tasks Section -->
+            <div class="bg-white shadow rounded-lg overflow-hidden p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h3 class="text-lg font-bold text-gray-900">Sub-tasks</h3>
+                    @if (auth()->user()->isAdmin())
+                        <button onclick="document.getElementById('create-subtask-form').classList.toggle('hidden')"
+                            class="bg-indigo-600 text-white px-3 py-1 rounded text-sm hover:bg-indigo-700 transition">
+                            Add Sub-task
+                        </button>
+                    @endif
+                </div>
+
+                <!-- Create Sub-task Form -->
+                @if (auth()->user()->isAdmin())
+                    <div id="create-subtask-form" class="hidden mb-6 bg-gray-50 p-4 rounded-lg border border-gray-200">
+                        <form action="{{ route('tasks.subtasks.store', $task) }}" method="POST"
+                            enctype="multipart/form-data">
+                            @csrf
+                            <div class="space-y-3">
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Title <strong
+                                            class="text-red-500">*</strong></label>
+                                    <input type="text" name="title" required
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border sm:text-sm">
+                                </div>
+                                <div class="grid grid-cols-2 gap-4">
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Priority <strong
+                                                class="text-red-500">*</strong></label>
+                                        <select name="priority"
+                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border sm:text-sm">
+                                            <option value="low">Low</option>
+                                            <option value="medium" selected>Medium</option>
+                                            <option value="high">High</option>
+                                            <option value="urgent">Urgent</option>
+                                        </select>
+                                    </div>
+                                    <div>
+                                        <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Type <strong
+                                                class="text-red-500">*</strong></label>
+                                        <select name="type"
+                                            class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border sm:text-sm">
+                                            <option value="feature">Feature</option>
+                                            <option value="bug">Bug</option>
+                                            <option value="improvement">Improvement</option>
+                                        </select>
+                                    </div>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Assign To</label>
+                                    <select name="assigned_to"
+                                        class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border sm:text-sm">
+                                        <option value="">Unassigned</option>
+                                        @foreach ($task->assignees as $user)
+                                            <option value="{{ $user->id }}">{{ $user->name }}</option>
+                                        @endforeach
+                                    </select>
+                                </div>
+                                <div>
+                                    <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Attachments
+                                        (Mulitple)
+                                        <small
+                                            class="text-xs text-gray-500">(.jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.xlsx,.xls,.csv)</small>
+                                    </label>
+                                    <input type="file" name="attachments[]" multiple
+                                        class="block w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-full file:border-0 file:text-sm file:font-semibold file:bg-indigo-50 file:text-indigo-700 hover:file:bg-indigo-100"
+                                        accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.xlsx,.xls,.csv">
+                                </div>
+                                <div class="flex justify-end">
+                                    <button type="button"
+                                        onclick="document.getElementById('create-subtask-form').classList.add('hidden')"
+                                        class="mr-2 text-gray-600 hover:text-gray-800 text-sm">Cancel</button>
+                                    <button type="submit"
+                                        class="bg-indigo-600 text-white px-4 py-2 rounded text-sm hover:bg-indigo-700 transition">Save</button>
+                                </div>
+                            </div>
+                        </form>
+                    </div>
+                @endif
+
+                <!-- Sub-tasks List -->
+                <div class="space-y-3">
+                    @forelse ($task->subTasks as $subTask)
+                        <div
+                            class="border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition {{ $subTask->status == 'done' ? 'bg-green-50' : '' }}">
+                            <div class="flex justify-between items-start">
+                                <div class="flex-grow min-w-0">
+                                    <div class="flex items-center gap-2 mb-1">
+                                        @php
+                                            $isUpdateStatus = false;
+                                            if (auth()->user()->role == 'admin') {
+                                                $isUpdateStatus = true;
+                                            } else {
+                                                $isUpdateStatus = empty($subTask->assigned_to)
+                                                    ? true
+                                                    : auth()->user()->id == $subTask->assigned_to;
+                                            }
+                                        @endphp
+                                        @if ($isUpdateStatus)
+                                            <form action="{{ route('subtasks.update', $subTask) }}" method="POST"
+                                                class="inline">
+                                                @csrf @method('PUT')
+                                                <!-- Update Status Toggle -->
+                                                <button type="submit" name="status"
+                                                    value="{{ $subTask->status == 'done' ? 'todo' : 'done' }}"
+                                                    class="flex items-center gap-2 focus:outline-none group">
+                                                    <div
+                                                        class="w-5 h-5 rounded border flex items-center justify-center transition-colors {{ $subTask->status == 'done' ? 'bg-green-500 border-green-500' : 'border-gray-400 group-hover:border-indigo-500' }}">
+                                                        @if ($subTask->status == 'done')
+                                                            <svg class="w-3 h-3 text-white" fill="none"
+                                                                viewBox="0 0 24 24" stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="3" d="M5 13l4 4L19 7" />
+                                                            </svg>
+                                                        @endif
+                                                    </div>
+                                                </button>
+                                            </form>
+                                        @endif
+                                        <span
+                                            class="font-medium text-gray-900 max-w-full overflow-x-auto whitespace-nowrap {{ $subTask->status == 'done' ? 'line-through text-gray-500' : '' }}">
+                                            {{ $subTask->title }}
+                                        </span>
+                                        <span
+                                            class="text-xs font-semibold uppercase px-2 py-0.5 rounded {{ $subTask->status == 'done' ? 'bg-green-100 text-green-800' : 'bg-gray-100 text-gray-600' }}">
+                                            {{ $subTask->status == 'done' ? 'Complete' : 'Incomplete' }}
+                                        </span>
+                                    </div>
+                                    <div class="flex items-center gap-4 text-xs text-gray-500 ml-8">
+                                        <span
+                                            class="px-2 py-0.5 rounded-full {{ $subTask->priority == 'urgent' ? 'bg-red-100 text-red-800' : ($subTask->priority == 'high' ? 'bg-orange-100 text-orange-800' : 'bg-gray-100 text-gray-800') }}">
+                                            {{ ucfirst($subTask->priority) }}
+                                        </span>
+                                        <span
+                                            class="bg-purple-50 text-purple-700 px-2 py-0.5 rounded-full">{{ ucfirst($subTask->type) }}</span>
+                                        @if ($subTask->assignee)
+                                            <span class="flex items-center gap-1">
+                                                <div
+                                                    class="h-4 w-4 rounded-full bg-indigo-100 flex items-center justify-center text-[10px] font-bold text-indigo-700">
+                                                    {{ substr($subTask->assignee->name, 0, 2) }}
+                                                </div>
+                                                {{ $subTask->assignee->name }}
+                                            </span>
+                                        @else
+                                            <span>Unassigned</span>
+                                        @endif
+                                    </div>
+                                    @if ($subTask->attachments->isNotEmpty())
+                                        <div class="mt-2 ml-8">
+                                            <p class="text-xs font-semibold text-gray-500 mb-1">Attachments:</p>
+                                            <div class="flex flex-wrap gap-2">
+                                                @foreach ($subTask->attachments as $att)
+                                                    <a href="{{ Storage::url($att->file_path) }}" target="_blank"
+                                                        class="text-xs text-indigo-600 hover:text-indigo-800 underline bg-indigo-50 px-2 py-1 rounded flex items-center gap-1">
+                                                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24"
+                                                            stroke="currentColor">
+                                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                                stroke-width="2"
+                                                                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
+                                                            </path>
+                                                        </svg>
+                                                        {{ Str::limit($att->original_name, 20) }}
+                                                    </a>
+                                                @endforeach
+                                            </div>
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="flex items-center">
+                                    @if (auth()->user()->isAdmin())
+                                        <form action="{{ route('subtasks.destroy', $subTask) }}" method="POST"
+                                            onsubmit="return confirm('Are you sure?')">
+                                            @csrf @method('DELETE')
+                                            <button type="submit" class="text-gray-400 hover:text-red-500 transition">
+                                                <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+                                                </svg>
+                                            </button>
+                                        </form>
+                                    @endif
+                                </div>
+                            </div>
+                        </div>
+                    @empty
+                        <p class="text-gray-500 italic text-sm text-center py-2">No sub-tasks yet.</p>
+                    @endforelse
+                </div>
+            </div>
+
             <!-- Updates Section -->
             <!-- Discussion & Activity -->
             <div class="space-y-6">
@@ -90,7 +281,9 @@
 
                     <div class="space-y-6 mb-8">
                         @php
-                            $combined = $task->comments->concat($task->nonAttachableAttachments)->sortByDesc('created_at');
+                            $combined = $task->comments
+                                ->concat($task->nonAttachableAttachments)
+                                ->sortByDesc('created_at');
                             //dump($combined);
                         @endphp
 
@@ -102,7 +295,7 @@
                                         {{ substr($item->user->name ?? 'U', 0, 2) }}
                                     </div>
                                 </div>
-                                <div class="flex-grow">
+                                <div class="flex-grow min-w-0">
                                     <div class="text-sm">
                                         <span
                                             class="font-medium text-gray-900">{{ $item->user->name ?? 'Unknown User' }}</span>
@@ -118,39 +311,40 @@
                                     </div>
 
                                     @if ($item instanceof App\Models\Comment)
-                                        <div class="mt-1 text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100">{{ $item->body }}</div>
+                                        <div
+                                            class="mt-1 text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100 overflow-x-auto whitespace-nowrap max-w-full">
+                                            {{ $item->body }}
+                                        </div>
 
                                         @if ($item->attachments->isNotEmpty())
-                                            @foreach ($item->attachments as $attachment)
-                                                <div class="mt-1 ml-5 text-gray-700 bg-gray-50 p-1 rounded-lg border border-gray-100">
-                                                    <div class="flex items-center space-x-1">
-                                                        <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                            <path
-                                                                stroke-linecap="round"
-                                                                stroke-linejoin="round"
-                                                                stroke-width="2"
-                                                                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                                                            ></path>
-                                                        </svg>
-                                                        <a href="{{ Storage::url($attachment->file_path) }}" target="_blank"
-                                                            class="text-indigo-600 hover:text-indigo-800 underline">
+                                            <div class="mt-2 ml-8">
+                                                <p class="text-xs font-semibold text-gray-500 mb-1">Attachments:</p>
+                                                <div class="flex flex-wrap gap-2">
+                                                    @foreach ($item->attachments as $attachment)
+                                                        <a href="{{ Storage::url($attachment->file_path) }}"
+                                                            target="_blank"
+                                                            class="text-xs text-indigo-600 hover:text-indigo-800 underline bg-indigo-50 px-2 py-1 rounded flex items-center gap-1">
+                                                            <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24"
+                                                                stroke="currentColor">
+                                                                <path stroke-linecap="round" stroke-linejoin="round"
+                                                                    stroke-width="2"
+                                                                    d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
+                                                                </path>
+                                                            </svg>
                                                             {{ $attachment->original_name }}
                                                         </a>
-                                                    </div>
+                                                    @endforeach
                                                 </div>
-                                            @endforeach
-                                            
+                                            </div>
                                         @endif
                                     @elseif ($item instanceof App\Models\Attachment)
                                         <div class="mt-1 text-gray-700 bg-gray-50 p-3 rounded-lg border border-gray-100">
                                             <div class="flex items-center space-x-2">
-                                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                                                    <path
-                                                        stroke-linecap="round"
-                                                        stroke-linejoin="round"
-                                                        stroke-width="2"
-                                                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13"
-                                                    ></path>
+                                                <svg class="h-5 w-5 text-gray-400" fill="none" viewBox="0 0 24 24"
+                                                    stroke="currentColor">
+                                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                                        d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
+                                                    </path>
                                                 </svg>
                                                 <a href="{{ Storage::url($item->file_path) }}" target="_blank"
                                                     class="text-indigo-600 hover:text-indigo-800 underline">
@@ -159,7 +353,7 @@
                                             </div>
                                         </div>
                                     @endif
-                                    
+
                                 </div>
                             </div>
                         @empty
@@ -167,11 +361,12 @@
                         @endforelse
 
 
-                        
+
                     </div>
 
                     <!-- Add Comment/File Form -->
-                    <form action="{{ route('tasks.comments.store', $task) }}" method="POST" enctype="multipart/form-data">
+                    <form action="{{ route('tasks.comments.store', $task) }}" method="POST"
+                        enctype="multipart/form-data">
                         @csrf
                         <div class="mb-3">
                             <label for="body" class="sr-only">Comment</label>
@@ -191,15 +386,17 @@
                                         <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                             d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13" />
                                     </svg>
-                                    <span class="text-sm">Attach File</span>
+                                    <span class="text-sm">Attach File <small class="text-xs text-gray-500">(only
+                                            .jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.xlsx,.xls,.csv)</small></span>
                                 </label>
                                 <input type="file" name="attachment" id="attachment" class="hidden"
-                                    onchange="document.getElementById('file-name').textContent = this.files[0].name" accept=".png, .jpeg, .jpg, .webp, .pdf">
+                                    onchange="document.getElementById('file-name').textContent = this.files[0].name"
+                                    accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.xlsx,.xls,.csv">
                                 <span id="file-name" class="ml-2 text-xs text-gray-500"></span>
 
-                                
+
                             </div>
-                            
+
                             <button type="submit"
                                 class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 transition text-sm font-medium">
                                 Post
@@ -215,10 +412,17 @@
                 <div class="bg-gray-50 rounded-lg p-6 border border-gray-200">
                     <h4 class="text-sm font-bold text-gray-700 mb-4 uppercase tracking-wide">System Updates</h4>
                     <div class="space-y-4">
-                        @forelse($task->activityLogs as $log)
+                        @php
+                            $combinedLogs = $task->activityLogs
+                                ->concat($task->subTasks->flatMap(fn($subTask) => $subTask->activityLogs))
+                                ->sortByDesc('created_at');
+                        @endphp
+                        @forelse($combinedLogs as $log)
                             <div class="text-sm text-gray-600">
                                 <span class="font-medium text-gray-800">{{ $log->user->name ?? 'System' }}</span>
-                                {{ $log->description }}
+                                <span class="inline-block align-middle max-w-full overflow-x-auto whitespace-nowrap">
+                                    {{ $log->description }}
+                                </span>
                                 <span class="text-gray-400 text-xs ml-1">{{ $log->created_at->diffForHumans() }}</span>
                             </div>
                         @empty

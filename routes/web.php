@@ -25,7 +25,7 @@ Route::middleware(['auth'])->group(function () {
         Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
         Route::put('/users/{user}', [AdminController::class, 'updateUser'])->name('users.update');
         Route::delete('/users/{user}', [AdminController::class, 'destroyUser'])->name('users.destroy');
-        
+
         // Activity Logs
         Route::get('/activity-logs', [App\Http\Controllers\ActivityLogController::class, 'index'])->name('activity_logs.index');
     });
@@ -41,7 +41,7 @@ Route::middleware(['auth'])->group(function () {
 
     // Task Update Routes
     Route::post('tasks/{task}/updates', [TaskUpdateController::class, 'store'])->name('tasks.updates.store');
-    
+
     // Comments & Attachments
     Route::post('tasks/{task}/comments', [App\Http\Controllers\CommentController::class, 'store'])->name('tasks.comments.store');
 
@@ -55,11 +55,16 @@ Route::middleware(['auth'])->group(function () {
     Route::post('credentials/share', [App\Http\Controllers\CredentialController::class, 'share'])->name('credentials.share'); // Bulk share
     Route::delete('credentials/{credential}', [App\Http\Controllers\CredentialController::class, 'destroy'])->name('credentials.destroy');
     Route::post('credentials/bulk-delete', [App\Http\Controllers\CredentialController::class, 'bulkDestroy'])->name('credentials.bulkDestroy');
-    
+
     // Tag Routes
     Route::post('tags', [App\Http\Controllers\TagController::class, 'store'])->name('tags.store');
     Route::post('tasks/{task}/tags', [TaskController::class, 'attachTag'])->name('tasks.tags.attach');
     Route::delete('tasks/{task}/tags/{tag}', [TaskController::class, 'detachTag'])->name('tasks.tags.detach');
+
+    // SubTask Routes
+    Route::post('tasks/{task}/subtasks', [App\Http\Controllers\SubTaskController::class, 'store'])->name('tasks.subtasks.store');
+    Route::put('subtasks/{subTask}', [App\Http\Controllers\SubTaskController::class, 'update'])->name('subtasks.update');
+    Route::delete('subtasks/{subTask}', [App\Http\Controllers\SubTaskController::class, 'destroy'])->name('subtasks.destroy');
 });
 
 // php artisan migrate:refresh --seed along with cache clearing route
@@ -81,4 +86,3 @@ Route::get('/migrate', function () {
     \Illuminate\Support\Facades\Artisan::call('view:clear');
     echo "Database migrated successfully!";
 });
-

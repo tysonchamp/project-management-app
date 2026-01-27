@@ -66,4 +66,9 @@ class User extends Authenticatable
     {
         return $this->belongsToMany(Credential::class, 'credential_user', 'user_id', 'credential_id')->withTimestamps();
     }
+
+    public function isAdmin()
+    {
+        return $this->role === 'admin';
+    }
 }

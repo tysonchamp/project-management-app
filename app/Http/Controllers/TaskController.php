@@ -18,7 +18,7 @@ class TaskController extends Controller
     public function index(Request $request)
     {
         $user = Auth::user();
-        
+
         $status = $request->input('status');
 
         $query = Task::with('assignees', 'creator', 'tags');
@@ -34,22 +34,22 @@ class TaskController extends Controller
 
         // Keyword Search
         if ($request->filled('keyword')) {
-            $query->where(function($q) use ($request) {
+            $query->where(function ($q) use ($request) {
                 $q->where('title', 'like', '%' . $request->keyword . '%')
-                  ->orWhere('description', 'like', '%' . $request->keyword . '%');
+                    ->orWhere('description', 'like', '%' . $request->keyword . '%');
             });
         }
 
         // Assignee Filter
         if ($request->filled('assignee_id')) {
-            $query->whereHas('assignees', function($q) use ($request) {
+            $query->whereHas('assignees', function ($q) use ($request) {
                 $q->where('users.id', $request->assignee_id);
             });
         }
 
         // Tag Filter
         if ($request->filled('tag_id')) {
-            $query->whereHas('tags', function($q) use ($request) {
+            $query->whereHas('tags', function ($q) use ($request) {
                 $q->where('tags.id', $request->tag_id);
             });
         }
@@ -63,7 +63,7 @@ class TaskController extends Controller
         }
 
         // Removed user-based filtering as per request (Global Visibility)
-        
+
         $tasks = $query->latest()->get(); // Use pagination if list gets long, but get() for now.
 
         // Data for filters
@@ -140,7 +140,6 @@ class TaskController extends Controller
             });
 
             return redirect()->route('tasks.index')->with('success', 'Task created successfully.');
-
         } catch (\Throwable $e) {
             Log::error('Task creation failed', [
                 'error' => $e->getMessage(),
@@ -149,9 +148,9 @@ class TaskController extends Controller
             ]);
 
             return redirect()
-            ->back()
-            ->withInput()
-            ->with('error', 'Something went wrong. Please try again.');
+                ->back()
+                ->withInput()
+                ->with('error', 'Something went wrong. Please try again.');
         }
     }
 
@@ -161,14 +160,14 @@ class TaskController extends Controller
     public function show(Task $task)
     {
         $task->load([
-            'assignees', 
-            'updates.user', 
+            'assignees',
+            'updates.user',
             'creator',
-            'comments'=> [
-                'user', 
+            'comments' => [
+                'user',
                 'attachments'
             ],
-            'nonAttachableAttachments'=> [
+            'nonAttachableAttachments' => [
                 'user'
             ],
         ]);
@@ -192,9 +191,9 @@ class TaskController extends Controller
         }
 
         // Removed user-based filtering (Global Visibility)
-        
+
         $allTasks = $query->get();
-        
+
         $todoTasks = $allTasks->where('status', 'todo');
         $inProgressTasks = $allTasks->where('status', 'in_progress');
         $doneTasks = $allTasks->where('status', 'done');
@@ -213,14 +212,14 @@ class TaskController extends Controller
             return back()->with('success', 'Successfully attached tag.');
         } catch (\Throwable $th) {
             return back()->with('error', 'Something went wrong.');
-        } 
+        }
     }
 
     public function detachTag(Task $task, \App\Models\Tag $tag)
     {
         try {
             DB::transaction(function () use ($task, $tag) {
-               $task->tags()->detach($tag->id);
+                $task->tags()->detach($tag->id);
                 \App\Services\LogActivity::record('update_task', "Successfully Removed tag from task: {$task->title}", $task);
             });
             return back()->with('success', 'Successfully Removed tag from task');
@@ -265,7 +264,7 @@ class TaskController extends Controller
                 $recipients = $task->assignees
                     ->pluck('id')
                     ->push($task->created_by)
-                    ->reject(fn ($id) => $id === Auth::id()) // exclude actor
+                    ->reject(fn($id) => $id === Auth::id()) // exclude actor
                     ->unique()
                     ->values()
                     ->toArray();
@@ -282,7 +281,6 @@ class TaskController extends Controller
                 }
             });
             return back()->with('success', 'Task status updated.');
-
         } catch (\Throwable $th) {
             return back()->with('error', 'Something went wrong.');
         }
@@ -302,6 +300,6 @@ class TaskController extends Controller
             return back()->with('success', 'Task deleted successfully.');
         } catch (\Throwable $th) {
             return back()->with('error', 'Something went wrong.');
-        } 
+        }
     }
 }

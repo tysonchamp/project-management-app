@@ -21,21 +21,19 @@ class AuthController extends Controller
 
         if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
-            
+
             \App\Services\LogActivity::record('login', 'User logged in');
 
             return redirect()->intended('/tasks');
         }
 
-        return back()->withErrors([
-            'email' => 'The provided credentials do not match our records.',
-        ])->onlyInput('email');
+        return redirect()->back()->withInput()->with('error', 'The provided credentials do not match our records.');
     }
 
     public function logout(Request $request)
     {
         \App\Services\LogActivity::record('logout', 'User logged out');
-        
+
         Auth::logout();
         $request->session()->invalidate();
         $request->session()->regenerateToken();
