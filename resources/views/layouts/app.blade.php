@@ -17,6 +17,11 @@
                 appId: "{{ env('ONESIGNAL_APP_ID') }}",
             });
             OneSignal.Debug.setLogLevel("trace");
+
+            @if (Auth::check())
+                OneSignal.User.PushSubscription.optIn();
+                await OneSignal.login("{{ (string) Auth::id() }}");
+            @endif
         });
     </script>
     {{-- <div class='onesignal-customlink-container'></div> --}}
