@@ -51,11 +51,32 @@ class ChatController extends Controller
 
     public function sendMessage(Request $request, OneSignalService $oneSignal)
     {
+        $request->validate([
+            'message' => 'nullable|string',
+            'attachment' => 'nullable|image|mimes:jpeg,png,jpg,gif,svg|max:5048',
+        ]);
+
+        // Ensure at least one is present
+        if (!$request->message && !$request->hasFile('attachment')) {
+            return response()->json(['error' => 'Message or attachment required'], 422);
+        }
+
         $data = [
             'sender_id' => Auth::id(),
             'message' => $request->message,
             'is_group' => $request->is_group ?? false,
         ];
+
+        if ($request->hasFile('attachment')) {
+            // $fileName = time() . '_' . $request->file('attachment')->getClientOriginalName();
+            // $request->file('attachment')->move(public_path('chat_attachments'), $fileName);
+            // $data['attachment'] = 'chat_attachments/' . $fileName;
+            $path = $request->file('attachment')->storeAs('chat_attachments', $request->file('attachment')->hashName(), [
+                'disk' => config('filesystems.default'),
+                'visibility' => 'public',
+            ]);
+            $data['attachment'] = $path;
+        }
 
         if (!$data['is_group']) {
             $data['receiver_id'] = $request->receiver_id;
@@ -65,14 +86,27 @@ class ChatController extends Controller
 
         // Send OneSignal Notification
         $sender = Auth::user();
+        
+        $msgContent = $sender->name . ": ";
+        if ($message->message) {
+            $msgContent .= $message->message;
+        } elseif ($message->attachment) {
+            $msgContent .= "Sent an image 📷";
+        }
+
         if ($data['is_group']) {
             $userIds = User::where('id', '!=', $sender->id)->pluck('id')->toArray();
             $title = "New Group Message";
-            $msg = $sender->name . ": " . $request->message;
+            $msg = $msgContent;
         } else {
             $userIds = [$request->receiver_id];
             $title = "New Message from " . $sender->name;
-            $msg = $request->message;
+            $msg = $sender->name . " sent you a message";
+            if ($message->attachment && !$message->message) {
+                 $msg = $sender->name . " sent you an image 📷";
+            } elseif ($message->message) {
+                 $msg = $message->message;
+            }
         }
 
         $oneSignal->sendNotification(

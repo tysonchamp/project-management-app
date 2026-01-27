@@ -14,7 +14,8 @@ class ChatMessage extends Model
         'receiver_id',
         'message',
         'is_group',
-        'read_at'
+        'read_at',
+        'attachment'
     ];
 
     public function sender()

@@ -65,11 +65,33 @@
                 <div class="text-center text-gray-500 mt-10">Select a conversation to start chatting</div>
             </div>
 
+            <!-- Attachment Preview -->
+            <div id="attachment-preview"
+                class="hidden px-4 py-2 bg-gray-50 border-t border-gray-200 flex items-center justify-between">
+                <div class="flex items-center">
+                    <span class="text-sm text-gray-600 mr-2">Image selected:</span>
+                    <img id="preview-img" src="" class="h-10 w-auto rounded border border-gray-300">
+                </div>
+                <button type="button" onclick="cancelAttachment()" class="text-gray-400 hover:text-red-500">
+                    <svg class="h-5 w-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12">
+                        </path>
+                    </svg>
+                </button>
+                <input type="file" id="image-upload" class="hidden" accept="image/*" onchange="handleFileSelect(this)">
+            </div>
+
             <!-- Input Area -->
             <div class="p-4 border-t border-gray-200 bg-white">
                 <form id="chat-form" class="flex space-x-3" onsubmit="sendMessage(event)">
-                    <input type="hidden" id="current_receiver_id">
-                    <input type="hidden" id="current_is_group" value="0">
+                    <button type="button" onclick="document.getElementById('image-upload').click()"
+                        class="inline-flex items-center px-3 py-2 border border-gray-300 shadow-sm text-sm leading-4 font-medium rounded-md text-gray-700 bg-white hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500">
+                        <svg class="h-5 w-5 text-gray-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                d="M15.172 7l-6.586 6.586a2 2 0 102.828 2.828l6.414-6.586a4 4 0 00-5.656-5.656l-6.415 6.585a6 6 0 108.486 8.486L20.5 13">
+                            </path>
+                        </svg>
+                    </button>
 
                     <input type="text" id="message-input"
                         class="flex-1 focus:ring-indigo-500 focus:border-indigo-500 block w-full sm:text-sm border-gray-300 rounded-md p-3 border"
@@ -93,13 +115,52 @@
         let currentIsGroup = false;
         let pollInterval = null;
         let currentUserCheck = {{ Auth::id() }};
+        let currentAttachment = null;
+        let storageBaseUrl = "{{ Storage::url('') }}"; // Base URL for public storage
 
         // Pagination & State
         let firstMessageId = null;
         let lastMessageId = null;
         let isLoadingHistory = false;
         let hasMoreHistory = true;
-        let isPolling = false; // Lock to prevent race conditions
+        let isPolling = false;
+
+        // Clipboard Paste Listener
+        document.addEventListener('paste', function(e) {
+            if (!currentReceiverId && !currentIsGroup) return; // Only if chat is active
+
+            const items = (e.clipboardData || e.originalEvent.clipboardData).items;
+            for (const item of items) {
+                if (item.type.indexOf('image') === 0) {
+                    const blob = item.getAsFile();
+                    handleFileCheck(blob);
+                    e.preventDefault();
+                    return;
+                }
+            }
+        });
+
+        function handleFileSelect(input) {
+            if (input.files && input.files[0]) {
+                handleFileCheck(input.files[0]);
+            }
+        }
+
+        function handleFileCheck(file) {
+            currentAttachment = file;
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                document.getElementById('preview-img').src = e.target.result;
+                document.getElementById('attachment-preview').classList.remove('hidden');
+            }
+            reader.readAsDataURL(file);
+        }
+
+        function cancelAttachment() {
+            currentAttachment = null;
+            document.getElementById('image-upload').value = '';
+            document.getElementById('attachment-preview').classList.add('hidden');
+        }
 
         function selectChat(userId, isGroup, name) {
             currentReceiverId = userId;
@@ -111,13 +172,10 @@
             hasMoreHistory = true;
             isLoadingHistory = false;
             isPolling = false;
+            cancelAttachment(); // Clear drafts
 
             // Update Header
             document.getElementById('chat-header-name').textContent = name;
-
-            // Update Inputs
-            document.getElementById('current_receiver_id').value = userId || '';
-            document.getElementById('current_is_group').value = isGroup ? '1' : '0';
 
             const input = document.getElementById('message-input');
             const btn = document.getElementById('send-btn');
@@ -222,11 +280,11 @@
 
             if (messages.length === 0) return;
 
-            // Filter out duplicates before rendering
+            // Filter out duplicates
             const uniqueMessages = messages.filter(msg => !document.getElementById('msg-' + msg.id));
             if (uniqueMessages.length === 0 && mode !== 'initial') return;
 
-            // Update IDs based on the FULL batch (assuming sorted) to keep track correctly
+            // Update IDs
             const batchLastId = messages[messages.length - 1].id;
             const batchFirstId = messages[0].id;
 
@@ -248,17 +306,35 @@
                     minute: '2-digit'
                 });
 
+                let content = '';
+
+                // Handle Attachments
+                if (msg.attachment) {
+                    // Construct path using storage base URL
+                    // Check if path already starts with slash or not
+                    let imgPath = msg.attachment;
+                    if (!imgPath.startsWith('http')) {
+                        imgPath = storageBaseUrl + imgPath;
+                    }
+
+                    content +=
+                        `<div class="mb-2"><img src="${imgPath}" class="rounded-lg max-h-60 w-auto cursor-pointer border border-gray-200" onclick="window.open(this.src, '_blank')"></div>`;
+                }
+                if (msg.message) {
+                    content += `<p class="text-sm">${escapeHtml(msg.message)}</p>`;
+                }
+
                 const bubble = isMe ?
                     `<div id="msg-${msg.id}" class="flex justify-end mb-4">
                     <div class="max-w-xs lg:max-w-md bg-indigo-600 text-white rounded-lg py-2 px-4 shadow rounded-br-none">
-                        <p class="text-sm">${escapeHtml(msg.message)}</p>
+                        ${content}
                         <p class="text-xs text-indigo-200 text-right mt-1">${time}</p>
                     </div>
                 </div>` :
                     `<div id="msg-${msg.id}" class="flex justify-start mb-4">
                      <div class="max-w-xs lg:max-w-md bg-white text-gray-800 rounded-lg py-2 px-4 shadow rounded-bl-none border border-gray-100">
                         ${currentIsGroup ? `<p class="text-xs text-indigo-600 font-bold mb-1">${escapeHtml(msg.sender.name)}</p>` : ''}
-                        <p class="text-sm">${escapeHtml(msg.message)}</p>
+                        ${content}
                         <p class="text-xs text-gray-400 mt-1">${time}</p>
                     </div>
                 </div>`;
@@ -283,9 +359,15 @@
             e.preventDefault();
             const input = document.getElementById('message-input');
             const message = input.value.trim();
-            if (!message) return;
+
+            // Allow send if either message OR attachment exists
+            if (!message && !currentAttachment) return;
 
             input.value = '';
+
+            // Hide preview immediately (optimistic)
+            const attachmentToSend = currentAttachment;
+            cancelAttachment();
 
             try {
                 const formData = new FormData();
@@ -295,6 +377,9 @@
                 } else {
                     formData.append('receiver_id', currentReceiverId);
                 }
+                if (attachmentToSend) {
+                    formData.append('attachment', attachmentToSend);
+                }
                 formData.append('_token', '{{ csrf_token() }}');
 
                 await fetch(`{{ route('chat.messages.send') }}`, {
@@ -302,7 +387,6 @@
                     body: formData
                 });
 
-                // Re-fetch intentionally to ensure sync, polling lock will handle race if any
                 pollNewMessages();
             } catch (error) {
                 console.error('Error sending message:', error);
