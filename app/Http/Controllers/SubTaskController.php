@@ -111,7 +111,7 @@ class SubTaskController extends Controller
                         'assigned_to' => 'nullable|exists:users,id',
                     ]);
                     $subTask->update($validated);
-                    $userIds = empty($subTask->assigned_to) ? $subTask->task->assignees->pluck('id')->toArray() : [strval($subTask->assigned_to)];
+                    $userIds = $subTask->task->assignees->pluck('id')->toArray();
                 }
 
                 $changes = implode(', ', array_keys($subTask->getChanges()));
