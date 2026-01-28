@@ -10,10 +10,45 @@ use Illuminate\Support\Facades\Storage;
 
 class SharedDriveController extends Controller
 {
-    public function index()
+    public function index(Request $request)
     {
-        $files = SharedFile::with('user')->latest()->get();
-        return view('drive.index', compact('files'));
+        $search = $request->input('search');
+        $folderId = $request->input('folder_id');
+        
+        $query = SharedFile::with('user');
+
+        if ($search) {
+            // Search globally
+            $query->where('filename', 'like', "%{$search}%")
+                  ->orWhere('description', 'like', "%{$search}%");
+        } else {
+            // Filter by folder
+            if ($folderId) {
+                $query->where('parent_id', $folderId);
+            } else {
+                $query->whereNull('parent_id');
+            }
+        }
+
+        // Sort: Folders first, then By Date Desc
+        $query->orderByDesc('is_folder')->latest();
+
+        $files = $query->paginate(20)->withQueryString();
+
+        // Breadcrumbs Logic
+        $breadcrumbs = [];
+        $currentFolder = null;
+
+        if ($folderId && !$search) {
+            $currentFolder = SharedFile::find($folderId);
+            $temp = $currentFolder;
+            while ($temp) {
+                array_unshift($breadcrumbs, $temp);
+                $temp = $temp->parent;
+            }
+        }
+
+        return view('drive.index', compact('files', 'breadcrumbs', 'currentFolder', 'search'));
     }
 
     public function store(Request $request)
@@ -21,26 +56,32 @@ class SharedDriveController extends Controller
         $request->validate([
             'file' => 'required|file|max:102400', // 100MB max
             'description' => 'nullable|string|max:1000',
+            'parent_id' => 'nullable|exists:shared_files,id'
         ]);
 
         if ($request->hasFile('file')) {
             $file = $request->file('file');
             $filename = $file->getClientOriginalName();
+            
+            // Generate path. Ideally use folder structure in S3 too, but flat is fine for now or simpler.
+            // Let's use flat structure "shared_drive/{hash}" to avoid S3 folder complexity for now,
+            // or we could append parent path? Flat is safer for moving files later.
             $path = $file->storeAs('shared_drive', $file->hashName(), [
-                'disk' => config('filesystems.default'), // Uses 's3' or 'public' based on .env
+                'disk' => config('filesystems.default'),
                 'visibility' => 'public',
             ]);
 
             $sharedFile = SharedFile::create([
                 'user_id' => Auth::id(),
+                'parent_id' => $request->parent_id,
                 'filename' => $filename,
                 'file_path' => $path,
                 'file_type' => $file->getClientMimeType(),
                 'file_size' => $file->getSize(),
                 'description' => $request->description,
+                'is_folder' => false,
             ]);
 
-            // Create Activity Log
             LogActivity::record('file_uploaded', "Uploaded file: {$filename}", $sharedFile);
 
             return response()->json($sharedFile->load('user'), 201);
@@ -49,22 +90,65 @@ class SharedDriveController extends Controller
         return response()->json(['error' => 'File not found'], 400);
     }
 
+    public function createFolder(Request $request)
+    {
+        $request->validate([
+            'name' => 'required|string|max:255',
+            'parent_id' => 'nullable|exists:shared_files,id'
+        ]);
+
+        $folder = SharedFile::create([
+            'user_id' => Auth::id(),
+            'parent_id' => $request->parent_id,
+            'filename' => $request->name,
+            'file_path' => '', // Empty for folders
+            'file_type' => 'folder',
+            'file_size' => 0,
+            'description' => null,
+            'is_folder' => true,
+        ]);
+
+        LogActivity::record('folder_created', "Created folder: {$request->name}", $folder);
+
+        return response()->json($folder, 201);
+    }
+
     public function destroy($id)
     {
-        // Optional: Policy check (only owner or admin)
-        // if ($file->user_id !== Auth::id()) { abort(403); }
-
         $file = SharedFile::findOrFail($id);
-
-        if (Storage::exists($file->file_path)) {
+        
+        // If query param 'permanent' is needed? For now just cascading delete via DB.
+        
+        // If it's a file, delete from S3
+        if (!$file->is_folder && Storage::exists($file->file_path)) {
             Storage::delete($file->file_path);
         }
+        
+        // If it's a folder, we depend on DB Cascade (defined in migration) to remove children rows.
+        // BUT we must delete physical files of children first if we want to clean S3.
+        // Recursive deletion is heavy. For now, assuming standard usage, user deletes content first or we implement a background job.
+        // Given complexity, I'll add a simple recursive file deletion here.
+        if ($file->is_folder) {
+            $this->deleteFolderContents($file);
+        }
 
-        // Create Activity Log before deletion
-        LogActivity::record('file_deleted', "Deleted file: {$file->filename}", $file);
+        $logAction = $file->is_folder ? 'folder_deleted' : 'file_deleted';
+        LogActivity::record($logAction, "Deleted: {$file->filename}", $file);
 
         $file->delete();
 
         return response()->json(['success' => true]);
+    }
+
+    private function deleteFolderContents($folder) {
+        foreach ($folder->children as $child) {
+            if ($child->is_folder) {
+                $this->deleteFolderContents($child);
+            } else {
+                if (Storage::exists($child->file_path)) {
+                    Storage::delete($child->file_path);
+                }
+            }
+        }
     }
 }
