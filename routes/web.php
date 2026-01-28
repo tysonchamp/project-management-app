@@ -75,8 +75,10 @@ Route::middleware(['auth'])->group(function () {
 
     // Shared Drive Routes
     Route::get('drive', [App\Http\Controllers\SharedDriveController::class, 'index'])->name('drive.index');
+    Route::get('drive/folders', [App\Http\Controllers\SharedDriveController::class, 'getFolders'])->name('drive.folders');
     Route::post('drive/upload', [App\Http\Controllers\SharedDriveController::class, 'store'])->name('drive.store');
     Route::post('drive/folder', [App\Http\Controllers\SharedDriveController::class, 'createFolder'])->name('drive.folder.create');
+    Route::post('drive/{id}/move', [App\Http\Controllers\SharedDriveController::class, 'move'])->name('drive.move');
     Route::delete('drive/{id}', [App\Http\Controllers\SharedDriveController::class, 'destroy'])->name('drive.destroy');
 });
 

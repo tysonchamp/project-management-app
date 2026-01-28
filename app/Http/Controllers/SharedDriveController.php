@@ -151,4 +151,59 @@ class SharedDriveController extends Controller
             }
         }
     }
+
+    public function getFolders()
+    {
+        // Return all folders for the move dialog
+        // Can optimize to exclude current descendants if needed, but client-side filtering or server-side valid check is fine.
+        $folders = SharedFile::where('is_folder', true)
+            ->select('id', 'filename', 'parent_id', 'created_at')
+            ->orderBy('filename')
+            ->get();
+            
+        return response()->json($folders);
+    }
+
+    public function move(Request $request, $id)
+    {
+        $request->validate([
+            'target_folder_id' => 'nullable|exists:shared_files,id',
+        ]);
+
+        $file = SharedFile::findOrFail($id);
+        $targetId = $request->target_folder_id;
+
+        // Validation: Cannot move folder into itself or its own subfolder
+        if ($file->is_folder && $targetId) {
+            if ($file->id == $targetId) {
+                return response()->json(['message' => 'Cannot move folder into itself.'], 422);
+            }
+
+            if ($this->isDescendant($targetId, $file->id)) {
+                return response()->json(['message' => 'Cannot move folder into its own subfolder.'], 422);
+            }
+        }
+
+        $oldParentName = $file->parent ? $file->parent->filename : 'Home';
+        $file->update(['parent_id' => $targetId]);
+        $newParent = $targetId ? SharedFile::find($targetId) : null;
+        $newParentName = $newParent ? $newParent->filename : 'Home';
+
+        LogActivity::record('file_moved', "Moved {$file->filename} from {$oldParentName} to {$newParentName}", $file);
+
+        return response()->json($file);
+    }
+
+    private function isDescendant($targetId, $folderId)
+    {
+        // Check if targetId is a descendant of folderId
+        $cursor = SharedFile::find($targetId);
+        while ($cursor) {
+            if ($cursor->parent_id == $folderId) {
+                return true;
+            }
+            $cursor = $cursor->parent; 
+        }
+        return false;
+    }
 }

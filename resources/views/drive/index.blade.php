@@ -130,18 +130,27 @@
                                     </svg>
                                 @endif
                             </div>
-                            @if (Auth::id() === $file->user_id)
-                                <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity">
+
+                            <div class="absolute top-2 right-2 opacity-0 group-hover:opacity-100 transition-opacity flex">
+                                <button onclick="openMoveModal({{ $file->id }}, '{{ addslashes($file->filename) }}')"
+                                    class="text-gray-400 hover:text-indigo-500 p-2" title="Move">
+                                    <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                            d="M14 5l7 7m0 0l-7 7m7-7H3"></path>
+                                    </svg>
+                                </button>
+
+                                @if (Auth::id() === $file->user_id)
                                     <button onclick="deleteFile({{ $file->id }})"
-                                        class="text-gray-400 hover:text-red-500 p-2">
+                                        class="text-gray-400 hover:text-red-500 p-2" title="Delete">
                                         <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                                 d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16">
                                             </path>
                                         </svg>
                                     </button>
-                                </div>
-                            @endif
+                                @endif
+                            </div>
                         </div>
 
                         <h3 class="font-medium text-gray-900 truncate mb-1 cursor-pointer hover:text-indigo-600"
@@ -210,12 +219,40 @@
                 {{ $files->links() }}
             </div>
         </div>
+
+        <!-- Move Modal -->
+        <div id="move-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
+            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+                <div class="mt-3 text-center">
+                    <h3 class="text-lg leading-6 font-medium text-gray-900">Move Item</h3>
+                    <div class="mt-2 px-7 py-3">
+                        <p class="text-sm text-gray-500 mb-2">Move <strong id="move-item-name"></strong> to:</p>
+                        <select id="move-target-folder"
+                            class="w-full border-gray-300 rounded-md shadow-sm focus:border-indigo-500 focus:ring-indigo-500">
+                            <option value="">Home (Root)</option>
+                            <!-- Options populated via JS -->
+                        </select>
+                    </div>
+                    <div class="items-center px-4 py-3">
+                        <button id="move-confirm-btn"
+                            class="px-4 py-2 bg-indigo-600 text-white text-base font-medium rounded-md w-full shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-300">
+                            Move
+                        </button>
+                        <button onclick="document.getElementById('move-modal').classList.add('hidden')"
+                            class="px-4 py-2 bg-white text-gray-700 text-base font-medium rounded-md w-full shadow-sm border border-gray-300 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-gray-300 mt-2">
+                            Cancel
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
     </div>
 
     <script src="https://cdn.jsdelivr.net/npm/axios/dist/axios.min.js"></script>
     <script>
         let selectedFile = null;
         const currentFolderId = "{{ request('folder_id') }}";
+        let moveItemId = null;
 
         function handleDragOver(e) {
             e.preventDefault();
@@ -316,6 +353,45 @@
                 alert('Delete failed.');
             }
         }
+
+        // Move Logic
+        async function openMoveModal(id, name) {
+            moveItemId = id;
+            document.getElementById('move-item-name').textContent = name;
+            document.getElementById('move-modal').classList.remove('hidden');
+
+            // Fetch folders
+            const select = document.getElementById('move-target-folder');
+            select.innerHTML = '<option value="">Loading...</option>';
+
+            try {
+                const response = await axios.get('{{ route('drive.folders') }}');
+                let options = '<option value="">Home (Root)</option>';
+                response.data.forEach(folder => {
+                    if (folder.id != id) { // Don't allow moving into self based on ID check (simple check)
+                        options += `<option value="${folder.id}">${folder.filename}</option>`;
+                    }
+                });
+                select.innerHTML = options;
+            } catch (error) {
+                select.innerHTML = '<option value="">Error loading folders</option>';
+            }
+        }
+
+        document.getElementById('move-confirm-btn').addEventListener('click', async () => {
+            const targetId = document.getElementById('move-target-folder').value;
+            if (!moveItemId) return;
+
+            try {
+                await axios.post(`/drive/${moveItemId}/move`, {
+                    target_folder_id: targetId || null,
+                    _token: '{{ csrf_token() }}'
+                });
+                window.location.reload();
+            } catch (error) {
+                alert('Move failed. ' + (error.response?.data?.message || ''));
+            }
+        });
 
         function copyToClipboard(text) {
             navigator.clipboard.writeText(text).then(() => alert('Link copied!')).catch(err => console.error(
