@@ -1,9 +1,10 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex h-[calc(100vh-10rem)] overflow-hidden bg-white rounded-lg shadow-lg border border-gray-200">
+    <div
+        class="flex h-[calc(100vh-8rem)] md:h-[calc(100vh-10rem)] overflow-hidden bg-white rounded-lg shadow-lg border border-gray-200 relative">
         <!-- Sidebar -->
-        <div class="w-1/4 bg-gray-50 border-r border-gray-200 flex flex-col">
+        <div id="chat-sidebar" class="w-full md:w-1/4 bg-gray-50 border-r border-gray-200 flex flex-col md:flex">
             <div class="p-4 border-b border-gray-200 bg-gray-100">
                 <h2 class="text-lg font-semibold text-gray-700">Conversations</h2>
             </div>
@@ -51,10 +52,17 @@
         </div>
 
         <!-- Chat Area -->
-        <div class="flex-1 flex flex-col bg-white">
+        <div id="chat-area"
+            class="w-full md:flex-1 flex-col bg-white hidden md:flex absolute md:relative inset-0 z-10 md:z-auto">
             <!-- Header -->
             <div class="p-4 border-b border-gray-200 flex justify-between items-center bg-white">
                 <div class="flex items-center space-x-3">
+                    <button onclick="showSidebar()" class="md:hidden text-gray-500 hover:text-gray-700">
+                        <svg class="w-6 h-6" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 19l-7-7 7-7">
+                            </path>
+                        </svg>
+                    </button>
                     <h3 id="chat-header-name" class="text-lg font-bold text-gray-800">Select a chat</h3>
                 </div>
             </div>
@@ -193,6 +201,15 @@
                 document.getElementById('user-chat-btn-' + userId).classList.add('bg-gray-100');
             }
 
+            // Mobile View Toggle
+            const sidebar = document.getElementById('chat-sidebar');
+            const chatArea = document.getElementById('chat-area');
+            if (window.innerWidth < 768) { // sm/md breakpoint check
+                sidebar.classList.add('hidden');
+                chatArea.classList.remove('hidden');
+                chatArea.classList.add('flex');
+            }
+
             // Clear Container
             const container = document.getElementById('messages-container');
             container.innerHTML = '<div class="text-center text-gray-400 mt-10">Loading conversations...</div>';
@@ -201,6 +218,18 @@
 
             loadInitialMessages();
             pollInterval = setInterval(pollNewMessages, 3000);
+        }
+
+        function showSidebar() {
+            const sidebar = document.getElementById('chat-sidebar');
+            const chatArea = document.getElementById('chat-area');
+
+            sidebar.classList.remove('hidden');
+            chatArea.classList.add('hidden');
+            chatArea.classList.remove('flex');
+
+            // Optional: clear active highlights on mobile if desired, or keep them.
+            // Keeping them is better for state.
         }
 
         async function loadInitialMessages() {

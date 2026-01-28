@@ -1,31 +1,32 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">Project Credentials</h1>
+    <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b pb-4 md:border-none md:pb-0">
+        <h1 class="text-3xl font-bold text-gray-800 tracking-tight">Project Credentials</h1>
         <button onclick="document.getElementById('createModal').classList.remove('hidden')"
-            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">
+            class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition w-full sm:w-auto shadow-sm text-sm font-medium">
             Add Credential
         </button>
     </div>
 
-    
     @if (Auth::user()->role === 'admin')
-        <div class="bg-white p-4 rounded-t-lg shadow border-b flex justify-between items-center">
-            <div class="text-sm text-gray-600">
-                <span id="selected-count">0</span> credentials selected
+        <div
+            class="bg-white p-4 rounded-t-xl shadow-sm border border-gray-100 border-b-0 flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+            <div class="text-sm text-gray-600 font-medium">
+                <span id="selected-count" class="font-bold text-indigo-600">0</span> credentials selected
             </div>
-            <div class="flex space-x-2">
+            <div class="flex flex-wrap gap-2 w-full md:w-auto">
                 <button onclick="openShareModal()" id="bulk-share-btn" disabled
-                    class="bg-blue-100 text-blue-600 px-3 py-1 rounded hover:bg-blue-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                    class="bg-blue-50 text-blue-600 border border-blue-200 px-3 py-1.5 rounded-lg hover:bg-blue-100 disabled:opacity-50 disabled:cursor-not-allowed flex-1 md:flex-none justify-center text-sm font-medium transition-colors">
                     Share Selected
                 </button>
                 <form action="{{ route('credentials.bulkDestroy') }}" method="POST"
-                    onsubmit="return confirm('Delete selected credentials?')" class="inline">
+                    onsubmit="return confirm('Delete selected credentials?')" class="inline flex-1 md:flex-none">
                     @csrf
                     <input type="hidden" name="credential_ids" id="bulk-delete-ids">
                     <button type="submit" id="bulk-delete-btn" disabled
-                        class="bg-red-100 text-red-600 px-3 py-1 rounded hover:bg-red-200 disabled:opacity-50 disabled:cursor-not-allowed">
+                        class="bg-red-50 text-red-600 border border-red-200 w-full md:w-auto px-3 py-1.5 rounded-lg hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed justify-center text-sm font-medium transition-colors">
                         Delete Selected
                     </button>
                 </form>
@@ -33,8 +34,10 @@
         </div>
     @endif
 
-    <div class="bg-white shadow rounded-lg overflow-hidden @if (Auth::user()->role === 'admin') rounded-t-none @endif">
+    <div
+        class="bg-white shadow rounded-lg overflow-hidden @if (Auth::user()->role === 'admin') rounded-t-none @endif overflow-x-auto">
         <table class="min-w-full divide-y divide-gray-200">
+            <!-- Table Content -->
             <thead class="bg-gray-50">
                 <tr>
                     @if (Auth::user()->role === 'admin')
@@ -79,7 +82,7 @@
                         <td class="px-6 py-4 whitespace-nowrap">
                             <div class="flex items-center space-x-2">
                                 <input type="password" value="{{ $cred->password }}" readonly
-                                    class="text-sm text-gray-600 bg-gray-50 border-none rounded p-1 w-32 focus:ring-0"
+                                    class="text-sm text-gray-600 bg-gray-50 border-none rounded p-1 w-24 md:w-32 focus:ring-0"
                                     id="pwd-{{ $cred->id }}">
                                 <button type="button" onclick="togglePassword({{ $cred->id }})"
                                     class="text-gray-400 hover:text-indigo-600">
@@ -132,36 +135,45 @@
     </div>
 
     <!-- Create Modal -->
-    <div id="createModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div id="createModal"
+        class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full flex items-center justify-center z-50">
+        <div class="relative p-5 border w-full max-w-md mx-4 shadow-lg rounded-md bg-white">
             <div class="mt-3">
                 <h3 class="text-lg leading-6 font-medium text-gray-900">Add New Credential</h3>
                 <form action="{{ route('credentials.store') }}" method="POST" class="mt-4">
                     @csrf
                     <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">Project Name <strong class="text-red-500">*</strong> </label>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Project Name <strong
+                                class="text-red-500">*</strong> </label>
                         <input type="text" name="project_name" required
-                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{ old('project_name') }}">
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            value="{{ old('project_name') }}">
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">Service Name <strong class="text-red-500">*</strong></label>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Service Name <strong
+                                class="text-red-500">*</strong></label>
                         <input type="text" name="service_name" required placeholder="e.g. AWS, Database"
-                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{ old('service_name') }}">
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            value="{{ old('service_name') }}">
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">Username <strong class="text-red-500">*</strong></label>
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Username <strong
+                                class="text-red-500">*</strong></label>
                         <input type="text" name="username"
-                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{ old('username') }}">
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            value="{{ old('username') }}">
                     </div>
                     <div class="mb-4">
-                        <label class="block text-gray-700 text-sm font-bold mb-2">Password <strong class="text-red-500">*</strong></label>
-                        <input type="text" name="password"  required
-                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{ old('password') }}">
+                        <label class="block text-gray-700 text-sm font-bold mb-2">Password <strong
+                                class="text-red-500">*</strong></label>
+                        <input type="text" name="password" required
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline"
+                            value="{{ old('password') }}">
                     </div>
                     <div class="mb-4">
                         <label class="block text-gray-700 text-sm font-bold mb-2">Description</label>
                         <textarea name="description"
-                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline" value="{{ old('description') }}"></textarea>
+                            class="shadow appearance-none border rounded w-full py-2 px-3 text-gray-700 leading-tight focus:outline-none focus:shadow-outline">{{ old('description') }}</textarea>
                     </div>
                     <div class="flex justify-end gap-2">
                         <button type="button" onclick="document.getElementById('createModal').classList.add('hidden')"
@@ -175,8 +187,9 @@
     </div>
 
     <!-- Share Modal -->
-    <div id="shareModal" class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full">
-        <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+    <div id="shareModal"
+        class="fixed inset-0 bg-gray-600 bg-opacity-50 hidden overflow-y-auto h-full w-full flex items-center justify-center z-50">
+        <div class="relative p-5 border w-full max-w-md mx-4 shadow-lg rounded-md bg-white">
             <h3 class="text-lg font-medium text-gray-900 mb-4">Share Credentials</h3>
             <p class="text-sm text-gray-500 mb-4">Select users to grant access to the selected credentials.</p>
             <form action="{{ route('credentials.share') }}" method="POST">
@@ -241,7 +254,7 @@
             // Populate delete input
             if (deleteInput) deleteInput.value = JSON.stringify(selected.map(cb => cb
                 .value
-                )); // Controller expects simple array, we might need to adjust or let PHP parse array inputs if form is array
+            )); // Controller expects simple array, we might need to adjust or let PHP parse array inputs if form is array
 
             // Populate share inputs
             if (shareInputsContainer) {

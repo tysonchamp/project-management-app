@@ -4,52 +4,56 @@
     <div class="h-full flex flex-col bg-gray-50">
         <div class="p-6 pb-0">
             <!-- Header & Search -->
+            <!-- Header & Search -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
                 <div>
-                    <h1 class="text-2xl font-bold text-gray-800">Shared Drive</h1>
+                    <h1 class="text-2xl font-bold text-gray-800 tracking-tight">Shared Drive</h1>
                     <!-- Breadcrumbs -->
-                    <nav class="flex text-sm text-gray-500 mt-1">
+                    <nav class="flex flex-wrap text-sm text-gray-500 mt-1">
                         <a href="{{ route('drive.index') }}" class="hover:text-indigo-600 hover:underline">Home</a>
                         @foreach ($breadcrumbs as $crumb)
-                            <span class="mx-2">/</span>
+                            <span class="mx-2 text-gray-400">/</span>
                             <a href="{{ route('drive.index', ['folder_id' => $crumb->id]) }}"
-                                class="hover:text-indigo-600 hover:underline">{{ $crumb->filename }}</a>
+                                class="hover:text-indigo-600 hover:underline font-medium text-gray-700">{{ $crumb->filename }}</a>
                         @endforeach
                     </nav>
                 </div>
 
-                <div class="flex flex-col sm:flex-row gap-2 w-full md:w-auto">
+                <div class="flex flex-col sm:flex-row gap-3 w-full md:w-auto items-stretch sm:items-center">
                     {{-- Search Form --}}
-                    <form action="{{ route('drive.index') }}" method="GET" class="relative">
+                    <form action="{{ route('drive.index') }}" method="GET" class="relative w-full sm:w-auto">
                         <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Search files..."
-                            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-64">
+                            class="pl-10 pr-4 py-2 border border-gray-300 rounded-lg focus:ring-indigo-500 focus:border-indigo-500 w-full sm:w-64 text-sm shadow-sm transition-shadow">
                         <input type="hidden" name="folder_id" value="{{ request('folder_id') }}">
                         <div class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
-                            <svg class="h-5 w-5 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                            <svg class="h-4 w-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                                 <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                     d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                             </svg>
                         </div>
                     </form>
 
-                    <button onclick="createFolder()"
-                        class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 font-medium transition-colors flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z">
-                            </path>
-                        </svg>
-                        New Folder
-                    </button>
+                    <div class="flex gap-2 w-full sm:w-auto">
+                        <button onclick="createFolder()"
+                            class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 font-medium transition-colors flex items-center justify-center flex-1 sm:flex-initial shadow-sm text-sm whitespace-nowrap">
+                            <svg class="w-5 h-5 mr-2 text-yellow-500" fill="none" stroke="currentColor"
+                                viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M9 13h6m-3-3v6m-9 1V7a2 2 0 012-2h6l2 2h6a2 2 0 012 2v8a2 2 0 01-2 2H5a2 2 0 01-2-2z">
+                                </path>
+                            </svg>
+                            New Folder
+                        </button>
 
-                    <button onclick="document.getElementById('drive-upload-input').click()"
-                        class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-sm font-medium transition-colors flex items-center justify-center">
-                        <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
-                                d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
-                        </svg>
-                        Upload File
-                    </button>
+                        <button onclick="document.getElementById('drive-upload-input').click()"
+                            class="bg-indigo-600 hover:bg-indigo-700 text-white px-4 py-2 rounded-lg shadow-sm font-medium transition-colors flex items-center justify-center flex-1 sm:flex-initial text-sm whitespace-nowrap">
+                            <svg class="w-5 h-5 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
+                                    d="M4 16v1a3 3 0 003 3h10a3 3 0 003-3v-1m-4-8l-4-4m0 0L8 8m4-4v12"></path>
+                            </svg>
+                            Upload
+                        </button>
+                    </div>
                 </div>
             </div>
 
@@ -70,7 +74,8 @@
                             </path>
                         </svg>
                         <p class="mt-2 text-sm text-gray-600">Drag and drop files here to upload to
-                            <strong>{{ $currentFolder ? $currentFolder->filename : 'Home' }}</strong></p>
+                            <strong>{{ $currentFolder ? $currentFolder->filename : 'Home' }}</strong>
+                        </p>
                         <p class="mt-1 text-xs text-gray-500">Maximum 100MB</p>
                     </div>
 
@@ -221,8 +226,9 @@
         </div>
 
         <!-- Move Modal -->
-        <div id="move-modal" class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50">
-            <div class="relative top-20 mx-auto p-5 border w-96 shadow-lg rounded-md bg-white">
+        <div id="move-modal"
+            class="fixed inset-0 bg-gray-600 bg-opacity-50 overflow-y-auto h-full w-full hidden z-50 flex items-center justify-center">
+            <div class="relative p-5 border w-full max-w-md mx-4 shadow-lg rounded-md bg-white">
                 <div class="mt-3 text-center">
                     <h3 class="text-lg leading-6 font-medium text-gray-900">Move Item</h3>
                     <div class="mt-2 px-7 py-3">

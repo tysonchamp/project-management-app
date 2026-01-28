@@ -1,33 +1,39 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">Tasks</h1>
-        <div class="flex space-x-2">
+    <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b pb-4 md:border-none md:pb-0">
+        <h1 class="text-3xl font-bold text-gray-800 tracking-tight">Tasks</h1>
+        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full md:w-auto">
             <a href="{{ route('tasks.kanban') }}"
-                class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition">Kanban View</a>
+                class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition text-center shadow-sm text-sm font-medium w-full sm:w-auto">
+                Kanban View
+            </a>
             <a href="{{ route('tasks.create') }}"
-                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Create New Task</a>
+                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition text-center shadow-sm text-sm font-medium w-full sm:w-auto">
+                Create Task
+            </a>
         </div>
     </div>
 
-    <div class="bg-white p-4 rounded-lg shadow mb-6 border border-gray-100">
-        <form action="{{ route('tasks.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-4 items-end">
+    <!-- Filter Section -->
+    <div class="bg-white p-5 rounded-xl shadow-sm border border-gray-100 mb-8">
+        <form action="{{ route('tasks.index') }}" method="GET" class="grid grid-cols-1 md:grid-cols-5 gap-6 items-end">
             <!-- Preserve Status -->
             @if (request('status'))
                 <input type="hidden" name="status" value="{{ request('status') }}">
             @endif
 
-            <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Keyword</label>
-                <input type="text" name="keyword" value="{{ request('keyword') }}" placeholder="Search..."
-                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Keyword</label>
+                <input type="text" name="keyword" value="{{ request('keyword') }}" placeholder="Search tasks..."
+                    class="w-full rounded-lg border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2 px-3 transition duration-200">
             </div>
 
-            <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Assignee</label>
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Assignee</label>
                 <select name="assignee_id"
-                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">
+                    class="w-full rounded-lg border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2 px-3 transition duration-200">
                     <option value="">All Users</option>
                     @foreach ($users as $user)
                         <option value="{{ $user->id }}" {{ request('assignee_id') == $user->id ? 'selected' : '' }}>
@@ -37,10 +43,10 @@
                 </select>
             </div>
 
-            <div>
-                <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Tag</label>
+            <div class="space-y-1">
+                <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Tag</label>
                 <select name="tag_id"
-                    class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 text-sm p-2 border">
+                    class="w-full rounded-lg border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2 px-3 transition duration-200">
                     <option value="">All Tags</option>
                     @foreach ($tags as $tag)
                         <option value="{{ $tag->id }}" {{ request('tag_id') == $tag->id ? 'selected' : '' }}>
@@ -50,35 +56,39 @@
                 </select>
             </div>
 
-            <div class="md:col-span-2 flex gap-2">
-                <div class="flex-grow">
-                    <label class="block text-xs font-bold text-gray-500 uppercase mb-1">Due Date</label>
-                    <div class="flex gap-2">
+            <div class="md:col-span-2 flex flex-col md:flex-row gap-3">
+                <div class="flex-grow space-y-1 w-full">
+                    <label class="block text-xs font-semibold text-gray-500 uppercase tracking-wide">Due Date</label>
+                    <div class="grid grid-cols-2 gap-2">
                         <input type="date" name="date_from" value="{{ request('date_from') }}"
-                            class="w-full rounded-md border-gray-300 p-2 border text-sm" placeholder="From">
+                            class="w-full rounded-lg border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2 px-3 transition duration-200">
                         <input type="date" name="date_to" value="{{ request('date_to') }}"
-                            class="w-full rounded-md border-gray-300 p-2 border text-sm" placeholder="To">
+                            class="w-full rounded-lg border-gray-200 bg-gray-50 focus:bg-white focus:border-indigo-500 focus:ring-indigo-500 text-sm py-2 px-3 transition duration-200">
                     </div>
                 </div>
-                <div class="flex items-end">
+                <!-- Buttons -->
+                <div class="flex items-end pt-2 md:pt-0 gap-2">
                     <button type="submit"
-                        class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 h-9 flex items-center">
-                        <svg class="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                        class="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-indigo-700 transition duration-200 flex items-center justify-center h-[38px] w-full md:w-auto flex-1 md:flex-none">
+                        <svg class="w-4 h-4 md:mr-0 mr-2" fill="none" stroke="currentColor" viewBox="0 0 24 24">
                             <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2"
                                 d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z"></path>
                         </svg>
+                        <span class="md:hidden text-sm font-medium">Search</span>
                     </button>
                     @if (request()->anyFilled(['keyword', 'assignee_id', 'tag_id', 'date_from', 'date_to']))
                         <a href="{{ route('tasks.index', ['status' => request('status')]) }}"
-                            class="ml-2 text-gray-500 hover:text-gray-700 text-sm flex items-center h-9">Clear</a>
+                            class="text-gray-500 hover:text-gray-800 text-sm font-medium flex items-center justify-center h-[38px] px-3 bg-gray-100 md:bg-transparent rounded-lg md:rounded-none w-full md:w-auto flex-1 md:flex-none transition">
+                            Clear
+                        </a>
                     @endif
                 </div>
             </div>
         </form>
     </div>
 
-    <div class="mb-6 border-b border-gray-200">
-        <nav class="-mb-px flex space-x-8" aria-label="Tabs">
+    <div class="mb-6 border-b border-gray-200 overflow-x-auto">
+        <nav class="-mb-px flex space-x-8 min-w-max" aria-label="Tabs">
             @php
                 $currentStatus = request('status', 'default');
                 $params = request()->except('status'); // Keep other filters

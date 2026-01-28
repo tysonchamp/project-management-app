@@ -1,14 +1,16 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">Admin Dashboard</h1>
+    <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b pb-4 md:border-none md:pb-0">
+        <h1 class="text-3xl font-bold text-gray-800 tracking-tight">Admin Dashboard</h1>
         <a href="{{ route('admin.users.create') }}"
-            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition">Create New User</a>
+            class="bg-blue-600 text-white px-4 py-2 rounded-lg hover:bg-blue-700 transition w-full sm:w-auto text-center shadow-sm text-sm font-medium">Create
+            New User</a>
     </div>
 
-    <div class="bg-white shadow-md rounded-lg overflow-hidden">
-        <table class="min-w-full bg-white">
+    <div class="bg-white shadow-sm rounded-xl overflow-hidden overflow-x-auto border border-gray-100">
+        <table class="min-w-full bg-white divide-y divide-gray-200">
             <thead class="bg-gray-100">
                 <tr>
                     <th class="py-3 px-6 text-left font-medium text-gray-600 uppercase tracking-wider">Name</th>
