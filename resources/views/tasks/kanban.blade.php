@@ -1,13 +1,23 @@
 @extends('layouts.app')
 
 @section('content')
-    <div class="flex justify-between items-center mb-6">
-        <h1 class="text-3xl font-bold text-gray-800">Tasks - Kanban Board</h1>
-        <div class="flex space-x-2">
+    <div
+        class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4 border-b pb-4 md:border-none md:pb-0">
+        <h1 class="text-3xl font-bold text-gray-800 tracking-tight">Tasks <span class="text-gray-400 font-normal">/</span>
+            Kanban</h1>
+        <div class="flex flex-col sm:flex-row space-y-2 sm:space-y-0 sm:space-x-3 w-full md:w-auto">
             <a href="{{ route('tasks.index') }}"
-                class="bg-gray-200 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-300 transition">List View</a>
+                class="bg-white border border-gray-300 text-gray-700 px-4 py-2 rounded-lg hover:bg-gray-50 transition text-center shadow-sm text-sm font-medium w-full sm:w-auto">
+                <svg class="w-4 h-4 inline-block mr-1 -mt-0.5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 6h16M4 12h16M4 18h16">
+                    </path>
+                </svg>
+                List View
+            </a>
             <a href="{{ route('tasks.create') }}"
-                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition">Create New Task</a>
+                class="bg-indigo-600 text-white px-4 py-2 rounded-lg hover:bg-indigo-700 transition text-center shadow-sm text-sm font-medium w-full sm:w-auto">
+                Create New Task
+            </a>
         </div>
     </div>
 
