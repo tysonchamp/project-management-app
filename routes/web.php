@@ -69,17 +69,21 @@ Route::middleware(['auth'])->group(function () {
     Route::resource('notes', App\Http\Controllers\NoteController::class);
     Route::post('notes/{note}/share', [App\Http\Controllers\NoteController::class, 'share'])->name('notes.share');
     // Chat Routes
-    Route::get('chat', [App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
-    Route::get('chat/messages', [App\Http\Controllers\ChatController::class, 'fetchMessages'])->name('chat.messages.fetch');
-    Route::post('chat/messages', [App\Http\Controllers\ChatController::class, 'sendMessage'])->name('chat.messages.send');
+    if (filter_var(env('ENABLE_DIRECT_CHAT', true), FILTER_VALIDATE_BOOLEAN)) {
+        Route::get('chat', [App\Http\Controllers\ChatController::class, 'index'])->name('chat.index');
+        Route::get('chat/messages', [App\Http\Controllers\ChatController::class, 'fetchMessages'])->name('chat.messages.fetch');
+        Route::post('chat/messages', [App\Http\Controllers\ChatController::class, 'sendMessage'])->name('chat.messages.send');
+    }
 
     // Shared Drive Routes
-    Route::get('drive', [App\Http\Controllers\SharedDriveController::class, 'index'])->name('drive.index');
-    Route::get('drive/folders', [App\Http\Controllers\SharedDriveController::class, 'getFolders'])->name('drive.folders');
-    Route::post('drive/upload', [App\Http\Controllers\SharedDriveController::class, 'store'])->name('drive.store');
-    Route::post('drive/folder', [App\Http\Controllers\SharedDriveController::class, 'createFolder'])->name('drive.folder.create');
-    Route::post('drive/{id}/move', [App\Http\Controllers\SharedDriveController::class, 'move'])->name('drive.move');
-    Route::delete('drive/{id}', [App\Http\Controllers\SharedDriveController::class, 'destroy'])->name('drive.destroy');
+    if (filter_var(env('ENABLE_SHARED_DRIVE', true), FILTER_VALIDATE_BOOLEAN)) {
+        Route::get('drive', [App\Http\Controllers\SharedDriveController::class, 'index'])->name('drive.index');
+        Route::get('drive/folders', [App\Http\Controllers\SharedDriveController::class, 'getFolders'])->name('drive.folders');
+        Route::post('drive/upload', [App\Http\Controllers\SharedDriveController::class, 'store'])->name('drive.store');
+        Route::post('drive/folder', [App\Http\Controllers\SharedDriveController::class, 'createFolder'])->name('drive.folder.create');
+        Route::post('drive/{id}/move', [App\Http\Controllers\SharedDriveController::class, 'move'])->name('drive.move');
+        Route::delete('drive/{id}', [App\Http\Controllers\SharedDriveController::class, 'destroy'])->name('drive.destroy');
+    }
 });
 
 // php artisan migrate:refresh --seed along with cache clearing route

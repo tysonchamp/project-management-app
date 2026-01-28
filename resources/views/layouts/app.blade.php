@@ -65,14 +65,18 @@
                             class="{{ request()->routeIs('notes.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
                             Notes
                         </a>
-                        <a href="{{ route('chat.index') }}"
-                            class="{{ request()->routeIs('chat.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                            Chat
-                        </a>
-                        <a href="{{ route('drive.index') }}"
-                            class="{{ request()->routeIs('drive.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
-                            Shared Drive
-                        </a>
+                        @if (filter_var(env('ENABLE_DIRECT_CHAT', true), FILTER_VALIDATE_BOOLEAN))
+                            <a href="{{ route('chat.index') }}"
+                                class="{{ request()->routeIs('chat.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                                Chat
+                            </a>
+                        @endif
+                        @if (filter_var(env('ENABLE_SHARED_DRIVE', true), FILTER_VALIDATE_BOOLEAN))
+                            <a href="{{ route('drive.index') }}"
+                                class="{{ request()->routeIs('drive.*') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
+                                Shared Drive
+                            </a>
+                        @endif
                         @if (Auth::user()->role === 'admin')
                             <a href="{{ route('admin.dashboard') }}"
                                 class="{{ request()->routeIs('admin.users.*') || request()->routeIs('admin.dashboard') ? 'border-indigo-500 text-gray-900' : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300' }} inline-flex items-center px-1 pt-1 border-b-2 text-sm font-medium transition-colors">
@@ -131,11 +135,15 @@
                     class="{{ request()->routeIs('credentials.*') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Credentials</a>
                 <a href="{{ route('notes.index') }}"
                     class="{{ request()->routeIs('notes.*') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Notes</a>
-                <a href="{{ route('chat.index') }}"
-                    class="{{ request()->routeIs('chat.*') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Chat</a>
-                <a href="{{ route('drive.index') }}"
-                    class="{{ request()->routeIs('drive.*') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Shared
-                    Drive</a>
+                @if (filter_var(env('ENABLE_DIRECT_CHAT', true), FILTER_VALIDATE_BOOLEAN))
+                    <a href="{{ route('chat.index') }}"
+                        class="{{ request()->routeIs('chat.*') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Chat</a>
+                @endif
+                @if (filter_var(env('ENABLE_SHARED_DRIVE', true), FILTER_VALIDATE_BOOLEAN))
+                    <a href="{{ route('drive.index') }}"
+                        class="{{ request()->routeIs('drive.*') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Shared
+                        Drive</a>
+                @endif
                 @if (Auth::user()->role === 'admin')
                     <a href="{{ route('admin.dashboard') }}"
                         class="{{ request()->routeIs('admin.users.*') ? 'bg-indigo-50 border-indigo-500 text-indigo-700' : 'border-transparent text-gray-500 hover:bg-gray-50 hover:border-gray-300 hover:text-gray-700' }} block pl-3 pr-4 py-2 border-l-4 text-base font-medium">Admin
