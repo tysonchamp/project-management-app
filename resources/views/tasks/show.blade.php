@@ -117,7 +117,7 @@
                                 <input type="text" name="title" required
                                     class="w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 p-2 border sm:text-sm">
                             </div>
-                            <div class="grid grid-cols-2 gap-4">
+                            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                                 <div>
                                     <label class="block text-xs font-bold text-gray-700 uppercase mb-1">Priority <strong
                                             class="text-red-500">*</strong></label>
@@ -389,8 +389,8 @@
                                 <p class="text-red-500 text-xs italic">{{ $message }}</p>
                             @enderror
                         </div>
-                        <div class="flex justify-between items-center">
-                            <div class="flex items-center">
+                        <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
+                            <div class="flex items-center w-full md:w-auto">
                                 <label for="attachment"
                                     class="cursor-pointer text-gray-500 hover:text-indigo-600 flex items-center space-x-1">
                                     <svg class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
@@ -403,14 +403,12 @@
                                 <input type="file" name="attachment" id="attachment" class="hidden"
                                     onchange="document.getElementById('file-name').textContent = this.files[0].name"
                                     accept=".jpg,.jpeg,.png,.pdf,.doc,.docx,.txt,.xlsx,.xls,.csv">
-                                <span id="file-name" class="ml-2 text-xs text-gray-500"></span>
-
-
+                                <span id="file-name" class="ml-2 text-xs text-gray-500 truncate max-w-[150px]"></span>
                             </div>
 
                             <button type="submit"
-                                class="bg-indigo-600 text-white px-4 py-2 rounded shadow hover:bg-indigo-700 transition text-sm font-medium">
-                                Post
+                                class="bg-indigo-600 text-white px-4 py-2 rounded-lg shadow-sm hover:bg-indigo-700 transition text-sm font-medium w-full md:w-auto">
+                                Post Comment
                             </button>
                         </div>
                         @error('attachment')
@@ -641,7 +639,7 @@
                 onclick="document.getElementById('edit-task-modal').classList.add('hidden')"></div>
             <span class="hidden sm:inline-block sm:align-middle sm:h-screen" aria-hidden="true">&#8203;</span>
             <div
-                class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg sm:w-full sm:p-6">
+                class="inline-block align-bottom bg-white rounded-lg px-4 pt-5 pb-4 text-left overflow-hidden shadow-xl transform transition-all sm:my-8 sm:align-middle sm:max-w-lg w-full sm:p-6">
                 <form action="{{ route('tasks.update', $task) }}" method="POST">
                     @csrf @method('PUT')
 
