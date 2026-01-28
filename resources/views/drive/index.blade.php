@@ -2,7 +2,7 @@
 
 @section('content')
     <div class="h-full flex flex-col bg-gray-50">
-        <div class="p-6 pb-0">
+        <div class="pb-0">
             <!-- Header & Search -->
             <!-- Header & Search -->
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-6 gap-4">
@@ -113,7 +113,7 @@
         </div>
 
         <!-- Files List -->
-        <div class="flex-1 overflow-y-auto px-6 pb-6">
+        <div class="flex-1 overflow-y-auto pb-6">
             <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-6">
                 @foreach ($files as $file)
                     <div
